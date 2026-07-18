@@ -1,0 +1,67 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Home from "@/pages/Home";
+import BrowseEvents from "@/pages/BrowseEvents";
+import EventDetails from "@/pages/EventDetails";
+import Dashboard from "@/pages/Dashboard";
+import CreateEvent from "@/pages/CreateEvent";
+import Auth from "@/pages/Auth";
+import Profile from "@/pages/Profile";
+import About from "@/pages/About";
+
+function AppLayout() {
+  return (
+    <div className="min-h-screen bg-background text-foreground antialiased">
+      <Navbar />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/events" element={<BrowseEvents />} />
+          <Route path="/events/create" element={
+            <ProtectedRoute requireOrganizer>
+              <CreateEvent />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:slug" element={<EventDetails />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/about" element={<About />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppLayout />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: "hsl(var(--card))",
+              color: "hsl(var(--foreground))",
+              border: "1px solid hsl(var(--border))",
+            },
+          }}
+        />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
