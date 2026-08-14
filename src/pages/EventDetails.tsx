@@ -27,7 +27,7 @@ const categoryColors: Record<string, string> = {
 
 export default function EventDetails() {
   const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const event = useMemo(() => db.getEvent(slug || ""), [slug]);
   const tiers = useMemo(() => event ? db.getTicketTiers(event.id) : [], [event]);
   const reviews = useMemo(() => event ? db.getReviews(event.id) : [], [event]);
@@ -78,8 +78,8 @@ export default function EventDetails() {
     if (!reviewText.trim()) { toast.error("Please write a review"); return; }
     db.createReview({
       userId: user.id,
-      userName: user.name,
-      userAvatar: user.avatar,
+      userName: profile?.full_name ?? user.email ?? "Unknown User",
+      userAvatar: profile?.avatar_url,
       eventId: event.id,
       rating: reviewRating,
       comment: reviewText.trim(),

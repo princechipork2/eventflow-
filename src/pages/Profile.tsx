@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/services/db";
 
 export default function Profile() {
-  const { user, isOrganizer } = useAuth();
+  const { user, profile, isOrganizer } = useAuth();
 
   if (!user) {
     return (
@@ -48,12 +48,18 @@ export default function Profile() {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
             <Avatar className="size-20 border-2 border-primary/30">
               <AvatarFallback className="text-2xl bg-primary/20 text-primary">
-                {user.name.split(" ").map(n => n[0]).join("")}
-              </AvatarFallback>
+  {(profile?.full_name || user.email || "U")
+    .split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase()}
+</AvatarFallback>
             </Avatar>
             <div className="flex-1 text-center sm:text-left">
               <div className="flex items-center gap-2 justify-center sm:justify-start">
-                <h1 className="text-2xl font-bold">{user.name}</h1>
+                <h1 className="text-2xl font-bold">
+  {profile?.full_name || user.email || "User"}
+</h1>
                 <Badge variant="outline" className="text-xs capitalize">
                   {user.role}
                 </Badge>
@@ -61,12 +67,13 @@ export default function Profile() {
               <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Mail className="size-3.5" /> {user.email}
               </p>
-              {user.bio && <p className="text-sm text-muted-foreground mt-3">{user.bio}</p>}
-              {user.organization && (
-                <p className="text-sm text-muted-foreground mt-1">{user.organization}</p>
-              )}
+
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 justify-center sm:justify-start">
-                <Calendar className="size-3" /> Member since {new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                <Calendar className="size-3" /> Member since{" "}
+{new Date(profile?.created_at || user.created_at).toLocaleDateString("en-US", {
+  month: "long",
+  year: "numeric",
+})}
               </p>
             </div>
             <Button variant="outline" size="sm" className="gap-1.5 shrink-0">

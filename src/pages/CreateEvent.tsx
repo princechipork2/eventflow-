@@ -28,7 +28,7 @@ const categories: { value: Category; label: string }[] = [
 
 export default function CreateEvent() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: "",
@@ -92,7 +92,7 @@ export default function CreateEvent() {
       timezone: form.timezone,
       venue: { name: form.venueName, address: form.venueAddress, city: form.venueCity, state: form.venueState, country: form.venueCountry },
       organizerId: user!.id,
-      organizerName: user!.name,
+      organizerName: profile?.full_name ?? user!.email ?? "Unknown Organizer",
       coverImage: form.coverImage,
       galleryImages: [],
       ticketTypes: ticketTiers.map(t => t.type),
