@@ -11,7 +11,6 @@ import {
   Star,
   ChartBar,
   LoaderCircle,
-  RefreshCw,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,21 +22,6 @@ import EventCard from "@/components/EventCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabaseDb, type Event, type Order } from "@/services/supabaseDb";
 
-interface OrganizerStats {
-  totalEvents: number;
-  totalTicketsSold: number;
-  totalRevenue: number;
-  totalOrders: number;
-  activeEvents: number;
-}
-
-interface AttendeeStats {
-  totalOrders: number;
-  totalSpent: number;
-  upcomingEvents: number;
-  confirmedOrders: number;
-}
-
 export default function Dashboard() {
   const { user, profile, isOrganizer, isLoading } = useAuth();
 
@@ -46,8 +30,20 @@ export default function Dashboard() {
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
 
-  const [orgStats, setOrgStats] = useState<OrganizerStats | null>(null);
-  const [attendeeStats, setAttendeeStats] = useState<AttendeeStats | null>(null);
+  const [orgStats, setOrgStats] = useState<{
+    totalEvents: number;
+    totalTicketsSold: number;
+    totalRevenue: number;
+    totalOrders: number;
+    activeEvents: number;
+  } | null>(null);
+
+  const [attendeeStats, setAttendeeStats] = useState<{
+    totalOrders: number;
+    totalSpent: number;
+    upcomingEvents: number;
+    confirmedOrders: number;
+  } | null>(null);
 
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -57,82 +53,148 @@ export default function Dashboard() {
     user?.user_metadata?.full_name ||
     "User";
 
-  async function loadDashboard() {
-    if (!user) return;
+  useEffect(() => {
+    if (!user || isLoading) return;
 
-    setDataLoading(true);
-    setDataError(null);
+    let cancelled = false;
 
-    try {
+    async function loadDashboard() {
+      setDataLoading(true);
+      setDataError(null);
+
+      const errors: string[] = [];
+
       /*
+       * ============================================================
        * ORGANIZER DASHBOARD
+       * ============================================================
        *
-       * Organizers do not need attendee statistics.
-       * Therefore we do not call getAttendeeStats() for them.
+       * Organizers do not need attendee statistics or their own
+       * purchased orders to render this dashboard.
        */
       if (isOrganizer) {
-        const [events, stats] = await Promise.all([
-          supabaseDb.getEventsByOrganizer(user.id),
-          supabaseDb.getOrganizerStats(user.id),
-        ]);
+        try {
+          const events = await supabaseDb.getEventsByOrganizer(user.id);
 
-        setMyEvents(events);
-        setOrgStats(stats);
-        setAttendeeStats(null);
+          if (!cancelled) {
+            setMyEvents(events);
+          }
+        } catch (error) {
+          console.error(
+            "Dashboard: getEventsByOrganizer failed:",
+            error
+          );
 
-        /*
-         * Recent activity for an organizer is not loaded here.
-         * This prevents the organizer dashboard from depending on
-         * the attendee order query and its nested relationships.
-         */
-        setMyOrders([]);
+          errors.push(
+            `Unable to load your events: ${
+              error instanceof Error
+                ? error.message
+                : "Unknown error"
+            }`
+          );
+        }
+
+        try {
+          const stats = await supabaseDb.getOrganizerStats(user.id);
+
+          if (!cancelled) {
+            setOrgStats(stats);
+          }
+        } catch (error) {
+          console.error(
+            "Dashboard: getOrganizerStats failed:",
+            error
+          );
+
+          errors.push(
+            `Unable to load organizer statistics: ${
+              error instanceof Error
+                ? error.message
+                : "Unknown error"
+            }`
+          );
+        }
+
+        if (!cancelled) {
+          setMyOrders([]);
+          setAttendeeStats(null);
+
+          if (errors.length > 0) {
+            setDataError(errors.join(" | "));
+          }
+
+          setDataLoading(false);
+        }
 
         return;
       }
 
       /*
+       * ============================================================
        * ATTENDEE DASHBOARD
+       * ============================================================
        *
-       * Only attendees need their personal orders and attendee stats.
+       * Attendees only need their own orders and attendee statistics.
        */
-      const [orders, stats] = await Promise.all([
-        supabaseDb.getOrders(user.id),
-        supabaseDb.getAttendeeStats(user.id),
-      ]);
+      try {
+        const orders = await supabaseDb.getOrders(user.id);
 
-      setMyOrders(orders);
-      setAttendeeStats(stats);
-      setMyEvents([]);
-      setOrgStats(null);
-    } catch (error) {
-      console.error("Dashboard data loading failed:", error);
+        if (!cancelled) {
+          setMyOrders(orders);
+        }
+      } catch (error) {
+        console.error(
+          "Dashboard: getOrders failed:",
+          error
+        );
 
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unable to load dashboard data.";
+        errors.push(
+          `Unable to load your orders: ${
+            error instanceof Error
+              ? error.message
+              : "Unknown error"
+          }`
+        );
+      }
 
-      setDataError(message);
+      try {
+        const stats = await supabaseDb.getAttendeeStats(user.id);
 
-      /*
-       * Keep the dashboard usable even when one database request fails.
-       */
-      if (isOrganizer) {
+        if (!cancelled) {
+          setAttendeeStats(stats);
+        }
+      } catch (error) {
+        console.error(
+          "Dashboard: getAttendeeStats failed:",
+          error
+        );
+
+        errors.push(
+          `Unable to load attendee statistics: ${
+            error instanceof Error
+              ? error.message
+              : "Unknown error"
+          }`
+        );
+      }
+
+      if (!cancelled) {
         setMyEvents([]);
         setOrgStats(null);
-      } else {
-        setMyOrders([]);
-        setAttendeeStats(null);
-      }
-    } finally {
-      setDataLoading(false);
-    }
-  }
 
-  useEffect(() => {
-    if (!user || isLoading) return;
+        if (errors.length > 0) {
+          setDataError(errors.join(" | "));
+        }
+
+        setDataLoading(false);
+      }
+    }
 
     loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, isLoading, isOrganizer]);
 
   if (isLoading || dataLoading) {
@@ -158,7 +220,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">
                 Dashboard
@@ -183,27 +245,9 @@ export default function Dashboard() {
         {/* Error */}
         {dataError && (
           <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-medium text-destructive">
-                  Unable to load dashboard data
-                </p>
-
-                <p className="text-sm text-destructive/80 mt-1 break-words">
-                  {dataError}
-                </p>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadDashboard}
-                className="shrink-0 gap-2"
-              >
-                <RefreshCw className="size-4" />
-                Retry
-              </Button>
-            </div>
+            <p className="text-sm text-destructive break-words">
+              {dataError}
+            </p>
           </div>
         )}
 
@@ -233,10 +277,13 @@ export default function Dashboard() {
             )}
           </TabsList>
 
-          {/* Overview */}
+          {/* ========================================================
+              OVERVIEW
+          ======================================================== */}
           <TabsContent value="overview" className="space-y-6">
 
-            {isOrganizer && orgStats ? (
+            {/* Organizer Statistics */}
+            {isOrganizer && orgStats && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <StatsCard
@@ -268,7 +315,10 @@ export default function Dashboard() {
                 />
 
               </div>
-            ) : !isOrganizer && attendeeStats ? (
+            )}
+
+            {/* Attendee Statistics */}
+            {!isOrganizer && attendeeStats && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <StatsCard
@@ -300,7 +350,11 @@ export default function Dashboard() {
                 />
 
               </div>
-            ) : (
+            )}
+
+            {/* No Statistics */}
+            {((isOrganizer && !orgStats) ||
+              (!isOrganizer && !attendeeStats)) && (
               <div className="glass rounded-2xl p-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   Dashboard statistics are currently unavailable.
@@ -308,9 +362,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Organizer overview */}
+            {/* ======================================================
+                ORGANIZER EVENT MANAGEMENT
+            ====================================================== */}
             {isOrganizer && (
               <div className="glass rounded-2xl p-6">
+
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-semibold">
@@ -332,6 +389,7 @@ export default function Dashboard() {
 
                 {myEvents.length === 0 ? (
                   <div className="text-center py-8">
+
                     <Ticket className="size-10 text-muted-foreground mx-auto mb-3" />
 
                     <p className="font-medium">
@@ -341,9 +399,11 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground mt-1">
                       Create your first event to get started.
                     </p>
+
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
                     {myEvents.slice(0, 3).map((event, index) => (
                       <EventCard
                         key={event.id}
@@ -351,14 +411,19 @@ export default function Dashboard() {
                         index={index}
                       />
                     ))}
+
                   </div>
                 )}
+
               </div>
             )}
 
-            {/* Attendee recent activity */}
+            {/* ======================================================
+                ATTENDEE RECENT ACTIVITY
+            ====================================================== */}
             {!isOrganizer && (
               <div className="glass rounded-2xl p-6">
+
                 <h3 className="font-semibold mb-4">
                   Recent Activity
                 </h3>
@@ -369,11 +434,13 @@ export default function Dashboard() {
                   </p>
                 ) : (
                   <div className="space-y-3">
+
                     {myOrders.slice(0, 5).map((order) => (
                       <div
                         key={order.id}
                         className="flex items-center gap-3 text-sm"
                       >
+
                         <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Ticket className="size-4 text-primary" />
                         </div>
@@ -401,21 +468,27 @@ export default function Dashboard() {
                         >
                           {order.status}
                         </Badge>
+
                       </div>
                     ))}
+
                   </div>
                 )}
+
               </div>
             )}
 
           </TabsContent>
 
-          {/* Organizer Events */}
+          {/* ========================================================
+              ORGANIZER EVENTS
+          ======================================================== */}
           {isOrganizer && (
             <TabsContent value="events" className="space-y-6">
 
               {myEvents.length === 0 ? (
                 <div className="text-center py-16 glass rounded-2xl">
+
                   <Ticket className="size-12 text-muted-foreground mx-auto mb-4" />
 
                   <h3 className="text-lg font-semibold mb-2">
@@ -432,9 +505,11 @@ export default function Dashboard() {
                       Create Event
                     </Button>
                   </Link>
+
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
                   {myEvents.map((event, index) => (
                     <EventCard
                       key={event.id}
@@ -442,18 +517,22 @@ export default function Dashboard() {
                       index={index}
                     />
                   ))}
+
                 </div>
               )}
 
             </TabsContent>
           )}
 
-          {/* Attendee Tickets */}
+          {/* ========================================================
+              ATTENDEE TICKETS
+          ======================================================== */}
           {!isOrganizer && (
             <TabsContent value="tickets" className="space-y-4">
 
               {myOrders.length === 0 ? (
                 <div className="text-center py-16 glass rounded-2xl">
+
                   <Calendar className="size-12 text-muted-foreground mx-auto mb-4" />
 
                   <h3 className="text-lg font-semibold mb-2">
@@ -469,6 +548,7 @@ export default function Dashboard() {
                       Browse Events
                     </Button>
                   </Link>
+
                 </div>
               ) : (
                 myOrders.map((order, index) => (

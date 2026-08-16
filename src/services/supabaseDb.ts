@@ -222,7 +222,7 @@ export const supabaseDb = {
       .maybeSingle();
 
     if (error) {
-      console.error("Error fetching event:", error.message);
+      console.error("Error fetching event:", error);
       throw error;
     }
 
@@ -464,9 +464,6 @@ export const supabaseDb = {
           quantity,
           unit_price,
           subtotal
-        ),
-        tickets (
-          ticket_code
         )
       `)
       .order("created_at", { ascending: false });
@@ -497,9 +494,6 @@ export const supabaseDb = {
           quantity,
           unit_price,
           subtotal
-        ),
-        tickets (
-          ticket_code
         )
       `)
       .eq("event_id", eventId)
@@ -634,9 +628,6 @@ export const supabaseDb = {
           quantity,
           unit_price,
           subtotal
-        ),
-        tickets (
-          ticket_code
         )
       `)
       .maybeSingle();
