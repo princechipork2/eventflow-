@@ -43,14 +43,16 @@ export default function BrowseEvents() {
         if (!cancelled) {
           setEvents(data);
         }
-      } catch (err) {
-        console.error("Failed to load events:", err);
+     } catch (err: any) {
+  console.error("Failed to load events:", err);
 
-        if (!cancelled) {
-          setEvents([]);
-          setError("Unable to load events. Please try again.");
-        }
-      } finally {
+  if (!cancelled) {
+    setEvents([]);
+    setError(
+      err?.message || "Unable to load events. Please try again."
+    );
+  }
+} finally {
         if (!cancelled) {
           setIsLoading(false);
         }
