@@ -475,7 +475,7 @@ export const supabaseDb = {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Error fetching orders:", error.message);
+      console.error("Error fetching orders:", error);
       throw error;
     }
 

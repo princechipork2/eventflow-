@@ -150,9 +150,9 @@ export default function Dashboard() {
 
         errors.push(
           `Unable to load your orders: ${
-            error instanceof Error
-              ? error.message
-              : "Unknown error"
+            error && typeof error === "object"
+              ? JSON.stringify(error)
+              : String(error)
           }`
         );
       }
@@ -171,9 +171,9 @@ export default function Dashboard() {
 
         errors.push(
           `Unable to load attendee statistics: ${
-            error instanceof Error
-              ? error.message
-              : "Unknown error"
+            error && typeof error === "object"
+              ? JSON.stringify(error)
+              : String(error)
           }`
         );
       }
