@@ -14,7 +14,6 @@
     "preview:dev": "concurrently \"npm run watch:errors\"",
     "postinstall": "node scripts/patch-lightningcss-android.cjs"
   },
-  "packageManager": "bun@1.2.22",
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
