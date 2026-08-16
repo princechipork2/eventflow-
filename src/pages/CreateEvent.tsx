@@ -354,12 +354,8 @@ export default function CreateEvent() {
         }
       }
 
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unable to create event. Please try again.";
-
-      toast.error(message);
+        const message = error instanceof Error ? error.message : JSON.stringify(error);
+        toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
