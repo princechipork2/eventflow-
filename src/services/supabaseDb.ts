@@ -214,20 +214,36 @@ export const supabaseDb = {
     return (data ?? []).map(mapEvent);
   },
 
-  async getEvent(idOrSlug: string): Promise<Event | null> {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`)
-      .maybeSingle();
+    async getEvent(idOrSlug: string): Promise<Event | null> {
+      const value = idOrSlug.trim();
 
-    if (error) {
-      console.error("Error fetching event:", error);
-      throw error;
-    }
+      if (!value) {
+        return null;
+      }
 
-    return data ? mapEvent(data) : null;
-  },
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          value
+        );
+
+      let query = supabase.from("events").select("*");
+
+      if (isUuid) {
+        query = query.eq("id", value);
+      } else {
+        query = query.eq("slug", value);
+      }
+
+      const { data, error } = await query.maybeSingle();
+
+        if (error) {
+          console.error("GET EVENT SUPABASE ERROR:", JSON.stringify(error, null, 2));
+          console.error("GET EVENT VALUE:", value);
+          console.error("GET EVENT IS UUID:", isUuid);
+          throw error;
+        }
+      return data ? mapEvent(data) : null;
+    },
 
   async getEventsByOrganizer(
     organizerId: string
@@ -516,7 +532,7 @@ export const supabaseDb = {
     ticketTierId: string;
     quantity: number;
     totalAmount: number;
-    status: OrderStatus;
+    status?: OrderStatus;
   }): Promise<Order> {
     const { data: createdOrder, error: orderError } =
       await supabase
@@ -525,7 +541,7 @@ export const supabaseDb = {
           user_id: order.userId,
           event_id: order.eventId,
           total_amount: order.totalAmount,
-          status: order.status,
+          status: "pending",
           payment_status: "pending",
         })
         .select("*")
@@ -539,11 +555,12 @@ export const supabaseDb = {
       throw orderError;
     }
 
-    const { data: tier, error: tierError } = await supabase
-      .from("ticket_tiers")
-      .select("price")
-      .eq("id", order.ticketTierId)
-      .single();
+    const { data: tier, error: tierError } =
+      await supabase
+        .from("ticket_tiers")
+        .select("price")
+        .eq("id", order.ticketTierId)
+        .single();
 
     if (tierError) {
       console.error(
@@ -570,31 +587,13 @@ export const supabaseDb = {
         "Error creating order item:",
         itemError.message
       );
-      throw itemError;
-    }
 
-    const { data: ticket, error: ticketError } =
       await supabase
-        .from("tickets")
-        .insert({
-          event_id: order.eventId,
-          attendee_id: order.userId,
-          quantity: order.quantity,
-          total_amount: order.totalAmount,
-          status:
-            order.status === "confirmed"
-              ? "confirmed"
-              : "pending",
-        })
-        .select("*")
-        .single();
+        .from("orders")
+        .delete()
+        .eq("id", createdOrder.id);
 
-    if (ticketError) {
-      console.error(
-        "Error creating ticket:",
-        ticketError.message
-      );
-      throw ticketError;
+      throw itemError;
     }
 
     return {
@@ -604,11 +603,12 @@ export const supabaseDb = {
       ticketTierId: order.ticketTierId,
       quantity: order.quantity,
       totalAmount: Number(createdOrder.total_amount),
-      status: createdOrder.status as OrderStatus,
+      status: "pending",
       createdAt: createdOrder.created_at,
-      qrCode: ticket.ticket_code,
+      qrCode: "",
     };
   },
+
 
   async updateOrderStatus(
     id: string,
