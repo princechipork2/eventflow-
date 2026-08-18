@@ -22,6 +22,24 @@ serve(async (req) => {
   }
 
   try {
+    console.log("========================================");
+    console.log("INITIALIZE PAYMENT DIAGNOSTIC");
+    console.log("========================================");
+
+    console.log("Request method:", req.method);
+    console.log(
+      "SUPABASE_URL present:",
+      Boolean(SUPABASE_URL)
+    );
+    console.log(
+      "SUPABASE_SERVICE_ROLE_KEY present:",
+      Boolean(SUPABASE_SERVICE_ROLE_KEY)
+    );
+    console.log(
+      "PAYSTACK_SECRET_KEY present:",
+      Boolean(PAYSTACK_SECRET_KEY)
+    );
+
     if (!PAYSTACK_SECRET_KEY) {
       throw new Error("PAYSTACK_SECRET_KEY is not configured.");
     }
@@ -33,9 +51,14 @@ serve(async (req) => {
     }
 
     /*
-     * Authenticate the caller using their Supabase access token.
+     * Authenticate the caller.
      */
     const authHeader = req.headers.get("Authorization");
+
+    console.log(
+      "Authorization header present:",
+      Boolean(authHeader)
+    );
 
     if (!authHeader) {
       return new Response(
@@ -65,6 +88,13 @@ serve(async (req) => {
       error: userError,
     } = await supabase.auth.getUser(token);
 
+    console.log("Authenticated user:", user?.id ?? null);
+    console.log(
+      "Authenticated user email present:",
+      Boolean(user?.email)
+    );
+    console.log("Auth error:", userError ?? null);
+
     if (userError || !user) {
       return new Response(
         JSON.stringify({
@@ -83,7 +113,14 @@ serve(async (req) => {
 
     const body = await req.json();
 
+    console.log(
+      "Request body keys:",
+      Object.keys(body || {})
+    );
+
     const orderId = body.order_id;
+
+    console.log("Order ID received:", orderId);
 
     if (!orderId) {
       return new Response(
@@ -102,22 +139,33 @@ serve(async (req) => {
     }
 
     /*
-     * Fetch the order from the database.
-     *
-     * IMPORTANT:
-     * We do NOT trust the amount sent by the browser.
+     * Fetch the order.
      */
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .select("id, user_id, total_amount, status, payment_status")
-      .eq("id", orderId)
-      .single();
+    const { data: order, error: orderError } =
+      await supabase
+        .from("orders")
+        .select(
+          "id, user_id, total_amount, status, payment_status"
+        )
+        .eq("id", orderId)
+        .single();
+
+    console.log("========================================");
+    console.log("ORDER QUERY RESULT");
+    console.log("========================================");
+
+    console.log("Order returned:", order ?? null);
+    console.log("Order query error:", orderError ?? null);
 
     if (orderError || !order) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: "Order not found.",
+          message:
+            orderError?.message ||
+            "Order not found.",
+          diagnostic_code:
+            orderError?.code || "NO_ORDER",
         }),
         {
           status: 404,
@@ -132,6 +180,16 @@ serve(async (req) => {
     /*
      * Make sure the authenticated user owns this order.
      */
+    console.log(
+      "Order owner:",
+      order.user_id
+    );
+
+    console.log(
+      "Authenticated user:",
+      user.id
+    );
+
     if (order.user_id !== user.id) {
       return new Response(
         JSON.stringify({
@@ -206,6 +264,16 @@ serve(async (req) => {
      */
     const reference = `EVF-${order.id}-${Date.now()}`;
 
+    console.log(
+      "Initializing Paystack transaction for order:",
+      order.id
+    );
+
+    console.log(
+      "Paystack amount in NGN:",
+      amount
+    );
+
     const paystackResponse = await fetch(
       "https://api.paystack.co/transaction/initialize",
       {
@@ -228,6 +296,21 @@ serve(async (req) => {
     );
 
     const result = await paystackResponse.json();
+
+    console.log(
+      "Paystack HTTP status:",
+      paystackResponse.status
+    );
+
+    console.log(
+      "Paystack response status:",
+      result?.status
+    );
+
+    console.log(
+      "Paystack response message:",
+      result?.message
+    );
 
     if (!paystackResponse.ok || !result.status) {
       console.error(
@@ -257,8 +340,10 @@ serve(async (req) => {
         success: true,
         authorization_url:
           result.data.authorization_url,
-        access_code: result.data.access_code,
-        reference: result.data.reference,
+        access_code:
+          result.data.access_code,
+        reference:
+          result.data.reference,
         order_id: order.id,
         amount,
       }),
@@ -272,9 +357,18 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error(
-      "INITIALIZE PAYMENT ERROR:",
-      error
+      "========================================"
     );
+
+    console.error(
+      "INITIALIZE PAYMENT ERROR"
+    );
+
+    console.error(
+      "========================================"
+    );
+
+    console.error(error);
 
     return new Response(
       JSON.stringify({
