@@ -311,8 +311,6 @@ export default function EventDetails() {
             "initialize-payment",
             {
               body: {
-
-
                 order_id: order.id,
               },
             }
@@ -371,21 +369,27 @@ export default function EventDetails() {
             setTimeout(resolve, 3000)
           );
 
-          const { data: verifyData, error: verifyError } =
-            await supabase.functions.invoke(
-              "verify-payment",
-              {
-                body: {
-                  reference,
-                  order_id: order.id,
-                },
-              }
-            );
+          const {
+            data: verifyData,
+            error: verifyError,
+          } = await supabase.functions.invoke(
+            "verify-payment",
+            {
+              body: {
+                reference,
+                order_id: order.id,
+              },
+            }
+          );
 
           if (verifyError) {
             console.error(
               "Payment verification attempt error:",
-              verifyError
+              JSON.stringify(
+                verifyError,
+                Object.getOwnPropertyNames(verifyError),
+                2
+              )
             );
             continue;
           }
@@ -462,7 +466,14 @@ export default function EventDetails() {
       setTiers(updatedTiers);
       setQuantity(1);
     } catch (error) {
-      console.error("PURCHASE ERROR RAW:", error);
+      console.error(
+        "PURCHASE ERROR RAW:",
+        JSON.stringify(
+          error,
+          Object.getOwnPropertyNames(error),
+          2
+        )
+      );
 
       const supabaseError = error as {
         code?: string;
