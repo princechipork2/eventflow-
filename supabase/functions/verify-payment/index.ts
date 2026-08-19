@@ -32,9 +32,6 @@ serve(async (req) => {
       );
     }
 
-    /*
-     * Authenticate the caller.
-     */
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
@@ -119,16 +116,15 @@ serve(async (req) => {
     }
 
     /*
-     * Fetch the order.
+     * Fetch the order using the service-role client.
      */
-    const { data: order, error: orderError } =
-      await supabase
-        .from("orders")
-        .select(
-          "id, user_id, total_amount, status, payment_status"
-        )
-        .eq("id", orderId)
-        .single();
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .select(
+        "id, user_id, total_amount, status, payment_status, payment_reference, payment_verified_at"
+      )
+      .eq("id", orderId)
+      .single();
 
     if (orderError || !order) {
       return new Response(
@@ -157,6 +153,33 @@ serve(async (req) => {
         }),
         {
           status: 403,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    /*
+     * If this order was already server-verified, return the
+     * verified Paystack status without creating another payment.
+     */
+    if (
+      order.payment_status === "successful" &&
+      order.payment_verified_at &&
+      order.payment_reference === reference
+    ) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          payment_status: "success",
+          reference: order.payment_reference,
+          order_id: order.id,
+          message: "Payment already verified successfully.",
+        }),
+        {
+          status: 200,
           headers: {
             ...corsHeaders,
             "Content-Type": "application/json",
@@ -216,8 +239,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          message:
-            "Payment does not belong to this order.",
+          message: "Payment does not belong to this order.",
         }),
         {
           status: 400,
@@ -230,9 +252,29 @@ serve(async (req) => {
     }
 
     /*
-     * Compare the amount paid by Paystack with the
-     * amount stored in our order.
-     *
+     * The payment must belong to the same authenticated user.
+     */
+    if (
+      payment.metadata?.user_id &&
+      payment.metadata.user_id !== user.id
+    ) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Payment does not belong to this user.",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    /*
+     * Compare Paystack amount with the order amount.
      * Paystack reports amount in kobo.
      */
     const expectedAmountKobo = Math.round(
@@ -256,8 +298,36 @@ serve(async (req) => {
       );
     }
 
-    const successful =
-      payment.status === "success";
+    const successful = payment.status === "success";
+
+    /*
+     * IMPORTANT:
+     * Only a successful Paystack transaction is allowed to
+     * create the server-side verification record.
+     */
+    if (successful) {
+      const { error: verificationUpdateError } = await supabase
+        .from("orders")
+        .update({
+          payment_reference: payment.reference,
+          payment_status: "successful",
+          payment_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order.id)
+        .eq("user_id", user.id);
+
+      if (verificationUpdateError) {
+        console.error(
+          "Payment verification database update error:",
+          verificationUpdateError
+        );
+
+        throw new Error(
+          "Payment was verified, but the order could not be updated."
+        );
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -267,8 +337,7 @@ serve(async (req) => {
         amount: payment.amount,
         currency: payment.currency,
         paid_at: payment.paid_at,
-        email:
-          payment.customer?.email ?? null,
+        email: payment.customer?.email ?? null,
         order_id: order.id,
         message: successful
           ? "Payment verified successfully."
@@ -283,10 +352,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error(
-      "VERIFY PAYMENT ERROR:",
-      error
-    );
+    console.error("VERIFY PAYMENT ERROR:", error);
 
     return new Response(
       JSON.stringify({
