@@ -29,9 +29,7 @@ function stringifyError(error: unknown) {
 
   return JSON.stringify(
     error,
-    Object.getOwnPropertyNames(
-      Object(error)
-    ),
+    Object.getOwnPropertyNames(Object(error)),
     2
   );
 }
@@ -238,7 +236,8 @@ serve(async (req) => {
           total_amount: order.total_amount,
           status: order.status,
           payment_status: order.payment_status,
-          payment_reference: order.payment_reference,
+          payment_reference:
+            order.payment_reference,
           payment_verified_at:
             order.payment_verified_at,
         },
@@ -293,7 +292,8 @@ serve(async (req) => {
         JSON.stringify(
           {
             order_id: order.id,
-            reference: order.payment_reference,
+            reference:
+              order.payment_reference,
           },
           null,
           2
@@ -304,7 +304,8 @@ serve(async (req) => {
         {
           success: true,
           payment_status: "success",
-          reference: order.payment_reference,
+          reference:
+            order.payment_reference,
           order_id: order.id,
           message:
             "Payment already verified successfully.",
@@ -518,8 +519,11 @@ serve(async (req) => {
     }
 
     /*
-     * Compare Paystack amount with the order amount.
-     * Paystack reports amount in kobo.
+     * Compare the Paystack requested amount with the order amount.
+     *
+     * The order total is the server-side source of truth. Paystack
+     * reports `requested_amount` in the currency's lowest denomination
+     * (kobo for NGN), so both values are compared in kobo.
      */
     const expectedAmountKobo =
       Math.round(
@@ -527,6 +531,9 @@ serve(async (req) => {
       );
 
     const actualAmountKobo =
+      Number(payment.requested_amount);
+
+    const paystackChargedAmountKobo =
       Number(payment.amount);
 
     console.log(
@@ -537,8 +544,12 @@ serve(async (req) => {
             order.total_amount,
           expected_amount_kobo:
             expectedAmountKobo,
-          paystack_amount_kobo:
+          paystack_requested_amount_kobo:
             actualAmountKobo,
+          paystack_amount_kobo:
+            paystackChargedAmountKobo,
+          paystack_fees_kobo:
+            Number(payment.fees ?? 0),
           match:
             actualAmountKobo ===
             expectedAmountKobo,
@@ -549,8 +560,9 @@ serve(async (req) => {
     );
 
     if (
+      !Number.isFinite(actualAmountKobo) ||
       actualAmountKobo !==
-      expectedAmountKobo
+        expectedAmountKobo
     ) {
       console.error(
         "VERIFY PAYMENT 400: PAYMENT AMOUNT MISMATCH."
