@@ -12,6 +12,7 @@ import CreateEvent from "@/pages/CreateEvent";
 import Auth from "@/pages/Auth";
 import Profile from "@/pages/Profile";
 import About from "@/pages/About";
+import PaymentCallback from "@/pages/PaymentCallback";
 
 function AppLayout() {
   return (
@@ -20,27 +21,61 @@ function AppLayout() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/events" element={<BrowseEvents />} />
-          <Route path="/events/create" element={
-            <ProtectedRoute requireOrganizer>
-              <CreateEvent />
-            </ProtectedRoute>
-          } />
-          <Route path="/events/:slug" element={<EventDetails />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
-          <Route path="/about" element={<About />} />
+
+          <Route
+            path="/events"
+            element={<BrowseEvents />}
+          />
+
+          <Route
+            path="/events/create"
+            element={
+              <ProtectedRoute requireOrganizer>
+                <CreateEvent />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/events/:slug"
+            element={<EventDetails />}
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/auth"
+            element={<Auth />}
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/about"
+            element={<About />}
+          />
+
+          <Route
+            path="/payment/callback"
+            element={<PaymentCallback />}
+          />
         </Routes>
       </main>
+
       <Footer />
     </div>
   );
@@ -51,6 +86,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppLayout />
+
         <Toaster
           position="top-center"
           toastOptions={{

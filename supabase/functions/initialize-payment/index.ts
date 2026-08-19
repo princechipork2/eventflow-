@@ -180,15 +180,8 @@ serve(async (req) => {
     /*
      * Make sure the authenticated user owns this order.
      */
-    console.log(
-      "Order owner:",
-      order.user_id
-    );
-
-    console.log(
-      "Authenticated user:",
-      user.id
-    );
+    console.log("Order owner:", order.user_id);
+    console.log("Authenticated user:", user.id);
 
     if (order.user_id !== user.id) {
       return new Response(
@@ -274,6 +267,16 @@ serve(async (req) => {
       amount
     );
 
+    const callbackUrl =
+      `https://eventflow-chipork.vercel.app/payment/callback?order_id=${encodeURIComponent(
+        order.id
+      )}`;
+
+    console.log(
+      "Paystack callback URL:",
+      callbackUrl
+    );
+
     const paystackResponse = await fetch(
       "https://api.paystack.co/transaction/initialize",
       {
@@ -287,6 +290,7 @@ serve(async (req) => {
           amount: Math.round(amount * 100),
           reference,
           currency: "NGN",
+          callback_url: callbackUrl,
           metadata: {
             order_id: order.id,
             user_id: user.id,
