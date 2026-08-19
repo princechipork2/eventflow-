@@ -3,40 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  if (error && typeof error === "object") {
-    const value = error as Record<string, unknown>;
-
-    if (typeof value.message === "string" && value.message) {
-      return value.message;
-    }
-
-    if (typeof value.error_description === "string" && value.error_description) {
-      return value.error_description;
-    }
-
-    if (typeof value.error === "string" && value.error) {
-      return value.error;
-    }
-
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return fallback;
-    }
-  }
-
-  if (typeof error === "string" && error) {
-    return error;
-  }
-
-  return fallback;
-}
-
 export default function PaymentCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -60,11 +26,6 @@ export default function PaymentCallback() {
       }
 
       try {
-        console.log("PAYMENT CALLBACK START:", {
-          reference,
-          orderId,
-        });
-
         setMessage("Verifying payment with Paystack...");
 
         const {
@@ -80,18 +41,8 @@ export default function PaymentCallback() {
           }
         );
 
-        console.log("VERIFY PAYMENT RESULT:", {
-          data: verifyData,
-          error: verifyError,
-        });
-
         if (verifyError) {
-          throw new Error(
-            `Payment verification request failed: ${getErrorMessage(
-              verifyError,
-              "Unknown verification error."
-            )}`
-          );
+          throw verifyError;
         }
 
         if (
@@ -104,16 +55,8 @@ export default function PaymentCallback() {
           );
         }
 
-        console.log(
-          "PAYMENT VERIFICATION SUCCESSFUL"
-        );
-
         setMessage(
           "Payment verified. Confirming your ticket..."
-        );
-
-        console.log(
-          "STEP 2: LOOKING UP ORDER ITEM"
         );
 
         const {
@@ -126,18 +69,8 @@ export default function PaymentCallback() {
           .limit(1)
           .maybeSingle();
 
-        console.log("ORDER ITEM RESULT:", {
-          orderItem,
-          error: orderItemError,
-        });
-
         if (orderItemError) {
-          throw new Error(
-            `Order item lookup failed: ${getErrorMessage(
-              orderItemError,
-              "Unknown order item error."
-            )}`
-          );
+          throw orderItemError;
         }
 
         if (!orderItem?.ticket_tier_id) {
@@ -146,10 +79,13 @@ export default function PaymentCallback() {
           );
         }
 
-        console.log(
-          "STEP 3: FINALIZING TICKET PURCHASE"
-        );
-
+        /*
+         * Finalize the verified payment into an actual ticket.
+         *
+         * Diagnostic logging is intentionally included here so
+         * we can identify the exact PostgreSQL RPC failure if
+         * finalization does not succeed.
+         */
         const {
           data: finalized,
           error: finalizeError,
@@ -163,21 +99,49 @@ export default function PaymentCallback() {
           }
         );
 
-        console.log("FINALIZE RESULT:", {
-          finalized,
-          error: finalizeError,
-        });
+        console.log(
+          "FINALIZE RPC DATA:",
+          finalized
+        );
+
+        console.log(
+          "FINALIZE RPC ERROR:",
+          finalizeError
+        );
 
         if (finalizeError) {
+          console.error(
+            "FINALIZE RPC ERROR MESSAGE:",
+            finalizeError.message
+          );
+
+          console.error(
+            "FINALIZE RPC ERROR DETAILS:",
+            finalizeError.details
+          );
+
+          console.error(
+            "FINALIZE RPC ERROR HINT:",
+            finalizeError.hint
+          );
+
+          console.error(
+            "FINALIZE RPC ERROR CODE:",
+            finalizeError.code
+          );
+
           throw new Error(
-            `Ticket finalization failed: ${getErrorMessage(
-              finalizeError,
-              "Unknown ticket finalization error."
-            )}`
+            finalizeError.message ||
+              "Ticket finalization failed."
           );
         }
 
         if (!finalized?.success) {
+          console.error(
+            "FINALIZE RPC UNSUCCESSFUL RESULT:",
+            finalized
+          );
+
           throw new Error(
             finalized?.message ||
               "Payment succeeded but ticket finalization failed."
@@ -213,12 +177,13 @@ export default function PaymentCallback() {
           return;
         }
 
-        const errorMessage = getErrorMessage(
-          error,
-          "Unable to complete payment verification."
-        );
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Unable to complete payment verification.";
 
         setMessage(errorMessage);
+
         toast.error(errorMessage);
       }
     };
