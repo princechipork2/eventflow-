@@ -99,7 +99,7 @@ export default function Profile() {
               <p className="text-xs text-muted-foreground">Tickets Sold</p>
             </div>
             <div className="glass rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold">${orgStats.totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold">₦{orgStats.totalRevenue.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">Revenue</p>
             </div>
             <div className="glass rounded-xl p-4 text-center">
@@ -131,7 +131,7 @@ export default function Profile() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{event.ticketsSold}/{event.capacity} sold · ${event.minPrice}–${event.maxPrice}</p>
+                      <p className="text-xs text-muted-foreground">{event.ticketsSold}/{event.capacity} sold · ₦{event.minPrice.toLocaleString()}–₦{event.maxPrice.toLocaleString()}</p>
                     </div>
                     <Ticket className="size-4 text-muted-foreground shrink-0" />
                   </Link>
@@ -152,7 +152,7 @@ export default function Profile() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{ev?.title || "Event"}</p>
-                        <p className="text-xs text-muted-foreground">{order.quantity} ticket(s) · ${order.totalAmount.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">{order.quantity} ticket(s) · ₦{order.totalAmount.toFixed(2)}</p>
                       </div>
                       <Badge variant="outline" className={`text-xs ${
                         order.status === "confirmed" ? "text-emerald-400" : order.status === "pending" ? "text-amber-400" : "text-rose-400"

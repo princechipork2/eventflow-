@@ -302,7 +302,7 @@ export default function Dashboard() {
 
                 <StatsCard
                   label="Revenue"
-                  value={`$${orgStats.totalRevenue.toLocaleString()}`}
+                  value={`₦${orgStats.totalRevenue.toLocaleString()}`}
                   icon={<DollarSign className="size-4" />}
                   delay={0.1}
                 />
@@ -330,7 +330,7 @@ export default function Dashboard() {
 
                 <StatsCard
                   label="Total Spent"
-                  value={`$${attendeeStats.totalSpent.toFixed(2)}`}
+                  value={`₦${attendeeStats.totalSpent.toFixed(2)}`}
                   icon={<DollarSign className="size-4" />}
                   delay={0.05}
                 />
@@ -451,7 +451,7 @@ export default function Dashboard() {
                           </p>
 
                           <p className="text-xs text-muted-foreground">
-                            {order.quantity} ticket(s) · $
+                            {order.quantity} ticket(s) · ₦
                             {order.totalAmount.toFixed(2)}
                           </p>
                         </div>

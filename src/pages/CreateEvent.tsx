@@ -748,7 +748,7 @@ export default function CreateEvent() {
                   </div>
 
                   <div>
-                    <Label>Price ($)</Label>
+                    <Label>Price (₦)</Label>
 
                     <Input
                       type="number"
@@ -906,13 +906,13 @@ export default function CreateEvent() {
                 </div>
 
                 <div className="text-sm text-muted-foreground">
-                  Price range: $
+                  Price range: ₦
                   {Math.min(
                     ...ticketTiers.map(
                       (tier) => tier.price
                     )
                   )}{" "}
-                  – $
+                  – ₦
                   {Math.max(
                     ...ticketTiers.map(
                       (tier) => tier.price

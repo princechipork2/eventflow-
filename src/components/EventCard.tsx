@@ -98,7 +98,7 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
                 </div>
               </div>
               <span className="text-sm font-semibold">
-                {event.minPrice === 0 && event.maxPrice === 0 ? "Free" : `$${event.minPrice}–$${event.maxPrice}`}
+                {event.minPrice === 0 && event.maxPrice === 0 ? "Free" : `₦${event.minPrice.toLocaleString()}–₦${event.maxPrice.toLocaleString()}`}
               </span>
             </div>
           </CardContent>
