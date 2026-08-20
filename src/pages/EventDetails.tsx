@@ -579,7 +579,6 @@ export default function EventDetails() {
           <div className="w-full h-full bg-muted" />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
           <div className="mx-auto max-w-7xl">

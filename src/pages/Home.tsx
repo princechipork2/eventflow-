@@ -10,6 +10,7 @@ import {
   Users,
   Sparkles,
   ChevronRight,
+  ImageOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,12 +88,16 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* ── Hero Section ── */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-muted">
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&q=80"
             alt=""
             className="w-full h-full object-cover"
+            fetchPriority="high"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
           />
 
           <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/70 to-background" />
@@ -108,18 +113,22 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Badge className="mb-6 px-4 py-1.5 text-xs bg-primary/20 text-primary border-primary/30 backdrop-blur-sm">
+            <Badge className="mb-6 px-4 py-1.5 text-xs font-bold bg-black/40 text-white border-white/30 backdrop-blur-sm drop-shadow-lg">
               <Sparkles className="size-3 mr-1.5" />
               The Future of Event Ticketing
             </Badge>
 
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-              <span className="gradient-text">{APP_TAGLINE}</span>
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 drop-shadow-2xl">
+              <span className="gradient-text drop-shadow-2xl">
+                {APP_TAGLINE}
+              </span>
               <br />
-              <span className="text-foreground">Made Simple</span>
+              <span className="text-white drop-shadow-2xl">
+                Made Simple
+              </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+            <p className="text-lg sm:text-xl text-white font-medium max-w-2xl mx-auto mb-8 leading-relaxed bg-black/70 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 shadow-xl">
               The premium platform for creating, discovering, and experiencing
               extraordinary events. From intimate gatherings to grand festivals.
             </p>
@@ -169,7 +178,6 @@ export default function Home() {
               <p className="text-2xl sm:text-3xl font-bold gradient-text">
                 {stat.value}
               </p>
-
               <p className="text-xs text-muted-foreground mt-1">
                 {stat.label}
               </p>
@@ -231,6 +239,8 @@ export default function Home() {
             </div>
           ) : (
             <div className="text-center py-12 border border-dashed border-border rounded-2xl">
+              <ImageOff className="size-8 mx-auto mb-3 text-muted-foreground/50" />
+
               <p className="text-muted-foreground">
                 No featured events available right now.
               </p>

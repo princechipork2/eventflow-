@@ -107,7 +107,7 @@ export default function BrowseEvents() {
                 placeholder="Search events by title or description..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 bg-background/50 border-white/5"
+                className="pl-9 bg-background border-input"
               />
             </div>
 
@@ -137,7 +137,7 @@ export default function BrowseEvents() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5"
+              className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border"
             >
               {categories.map(cat => (
                 <button
@@ -146,7 +146,7 @@ export default function BrowseEvents() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     category === cat.value
                       ? "bg-primary text-primary-foreground"
-                      : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   {cat.label}

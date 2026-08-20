@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  ImageOff,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,14 +109,23 @@ export default function TicketCard({
     >
       <div className="flex flex-col sm:flex-row">
         {/* Left - Event Image */}
-        <div className="sm:w-40 h-32 sm:h-auto relative overflow-hidden shrink-0">
-          <img
-            src={event.coverImage}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
+        <div className="sm:w-40 h-32 sm:h-auto relative overflow-hidden shrink-0 bg-muted">
+          {event.coverImage ? (
+            <img
+              src={event.coverImage}
+              alt={event.title}
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 via-muted to-purple-500/20">
+              <ImageOff className="size-8 text-muted-foreground/50" />
+            </div>
+          )}
 
-          <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
         </div>
 
         {/* Middle - Details */}
@@ -166,7 +176,7 @@ export default function TicketCard({
             </span>
 
             <span className="font-medium text-foreground">
-              ${order.totalAmount.toFixed(2)}
+              ₦{order.totalAmount.toLocaleString()}
             </span>
           </div>
 

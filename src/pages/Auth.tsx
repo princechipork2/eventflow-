@@ -150,7 +150,7 @@ export default function Auth() {
                     placeholder="you@example.com"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    className="pl-9 bg-background/50 border-white/5"
+                    className="pl-9 bg-background border-input"
                     required
                   />
                 </div>
@@ -187,7 +187,7 @@ export default function Auth() {
                     placeholder="New password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="pl-9 pr-9 bg-background/50 border-white/5"
+                    className="pl-9 pr-9 bg-background border-input"
                     required
                   />
                   <button
@@ -209,7 +209,7 @@ export default function Auth() {
                     placeholder="Confirm new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-9 bg-background/50 border-white/5"
+                    className="pl-9 bg-background border-input"
                     required
                   />
                 </div>
@@ -249,7 +249,7 @@ export default function Auth() {
                         placeholder="you@example.com"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        className="pl-9 bg-background/50 border-white/5"
+                        className="pl-9 bg-background border-input"
                         required
                       />
                     </div>
@@ -273,7 +273,7 @@ export default function Auth() {
                         placeholder="••••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="pl-9 pr-9 bg-background/50 border-white/5"
+                        className="pl-9 pr-9 bg-background border-input"
                         required
                       />
                       <button
@@ -307,7 +307,7 @@ export default function Auth() {
                         placeholder="Your name"
                         value={signupName}
                         onChange={(e) => setSignupName(e.target.value)}
-                        className="pl-9 bg-background/50 border-white/5"
+                        className="pl-9 bg-background border-input"
                         required
                       />
                     </div>
@@ -322,7 +322,7 @@ export default function Auth() {
                         placeholder="you@example.com"
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
-                        className="pl-9 bg-background/50 border-white/5"
+                        className="pl-9 bg-background border-input"
                         required
                       />
                     </div>
@@ -337,7 +337,7 @@ export default function Auth() {
                         placeholder="At least 6 characters"
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
-                        className="pl-9 pr-9 bg-background/50 border-white/5"
+                        className="pl-9 pr-9 bg-background border-input"
                         required
                       />
                       <button
@@ -358,7 +358,7 @@ export default function Auth() {
                         className={`p-3 rounded-xl border text-sm transition-all ${
                           signupRole === "attendee"
                             ? "border-primary bg-primary/10"
-                            : "border-white/5 bg-white/5 hover:border-white/20"
+                            : "border-border bg-muted hover:border-primary/30"
                         }`}
                       >
                         <User className="size-4 mx-auto mb-1" />
@@ -370,7 +370,7 @@ export default function Auth() {
                         className={`p-3 rounded-xl border text-sm transition-all ${
                           signupRole === "organizer"
                             ? "border-primary bg-primary/10"
-                            : "border-white/5 bg-white/5 hover:border-white/20"
+                            : "border-border bg-muted hover:border-primary/30"
                         }`}
                       >
                         <Sparkles className="size-4 mx-auto mb-1" />
