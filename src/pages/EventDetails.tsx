@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import { supabaseDb } from "@/services/supabaseDb";
-import type { Event, TicketTier } from "@/services/db";
+import type { Event, TicketTier } from "@/types/event";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 

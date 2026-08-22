@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { MapPin, Calendar, Clock, Users, ImageOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Event } from "@/services/db";
+import type { Event } from "@/types/event";
 
 const categoryColors: Record<string, string> = {
   music: "bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/30",

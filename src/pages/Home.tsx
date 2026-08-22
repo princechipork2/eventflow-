@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/EventCard";
 import { supabaseDb } from "@/services/supabaseDb";
-import type { Event } from "@/services/db";
+import type { Event } from "@/types/event";
 import { APP_NAME, APP_TAGLINE } from "@/constants";
 
 const features = [
