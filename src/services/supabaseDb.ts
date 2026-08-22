@@ -480,7 +480,18 @@ export const supabaseDb = {
           quantity,
           unit_price,
           subtotal
-        )
+          ),
+          tickets (
+            id,
+            event_id,
+            attendee_id,
+            ticket_code,
+            quantity,
+            total_amount,
+            purchase_date,
+            status,
+            order_id
+          )
       `)
       .order("created_at", { ascending: false });
 
