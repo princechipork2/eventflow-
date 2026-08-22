@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -94,20 +95,13 @@ function AppLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppLayout />
+      <NotificationProvider>
+        <AuthProvider>
+          <AppLayout />
 
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            style: {
-              background: "hsl(var(--card))",
-              color: "hsl(var(--foreground))",
-              border: "1px solid hsl(var(--border))",
-            },
-          }}
-        />
-      </AuthProvider>
+          <Toaster />
+        </AuthProvider>
+      </NotificationProvider>
     </BrowserRouter>
   );
 }

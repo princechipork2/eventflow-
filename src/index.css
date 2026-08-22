@@ -291,3 +291,120 @@
   box-shadow: 0 4px 16px rgb(15 23 42 / 0.08);
   border-color: rgb(15 23 42 / 0.08);
 }
+
+/* =========================================================
+   EVENTFLOW NOTIFICATIONS — SONNER
+   ========================================================= */
+
+/* Keep notifications clearly below the fixed navbar */
+[data-sonner-toaster][data-y-position="top"] {
+  top: 88px !important;
+  z-index: 99999 !important;
+}
+
+/* Notification card */
+[data-sonner-toast] {
+  width: min(420px, calc(100vw - 32px)) !important;
+  min-height: 64px !important;
+  padding: 16px 18px !important;
+  border-radius: 14px !important;
+  border-width: 1px !important;
+  box-shadow:
+    0 12px 30px rgb(15 23 42 / 0.16),
+    0 4px 10px rgb(15 23 42 / 0.08) !important;
+  font-size: 15px !important;
+}
+
+/* Success */
+[data-sonner-toast][data-type="success"] {
+  background: oklch(0.95 0.05 145) !important;
+  color: oklch(0.30 0.10 145) !important;
+  border-color: oklch(0.72 0.15 145) !important;
+}
+
+/* Error */
+[data-sonner-toast][data-type="error"] {
+  background: oklch(0.95 0.05 25) !important;
+  color: oklch(0.32 0.12 25) !important;
+  border-color: oklch(0.72 0.16 25) !important;
+}
+
+/* Warning */
+[data-sonner-toast][data-type="warning"] {
+  background: oklch(0.96 0.06 85) !important;
+  color: oklch(0.34 0.10 70) !important;
+  border-color: oklch(0.78 0.15 85) !important;
+}
+
+/* Information */
+[data-sonner-toast][data-type="info"] {
+  background: oklch(0.95 0.05 240) !important;
+  color: oklch(0.30 0.10 240) !important;
+  border-color: oklch(0.72 0.15 240) !important;
+}
+
+/* Loading / ordinary notification */
+[data-sonner-toast][data-type="loading"],
+[data-sonner-toast][data-type="default"] {
+  background: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+/* Toast title */
+[data-sonner-toast] [data-title] {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+/* Toast description */
+[data-sonner-toast] [data-description] {
+  margin-top: 4px !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+/* Make the close button easier to use */
+[data-sonner-toast] [data-close-button] {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* Dark mode */
+.dark [data-sonner-toast][data-type="success"] {
+  background: oklch(0.24 0.07 145) !important;
+  color: oklch(0.90 0.10 145) !important;
+  border-color: oklch(0.48 0.12 145) !important;
+}
+
+.dark [data-sonner-toast][data-type="error"] {
+  background: oklch(0.25 0.08 25) !important;
+  color: oklch(0.92 0.08 25) !important;
+  border-color: oklch(0.50 0.14 25) !important;
+}
+
+.dark [data-sonner-toast][data-type="warning"] {
+  background: oklch(0.25 0.07 80) !important;
+  color: oklch(0.94 0.08 85) !important;
+  border-color: oklch(0.52 0.13 80) !important;
+}
+
+.dark [data-sonner-toast][data-type="info"] {
+  background: oklch(0.24 0.07 240) !important;
+  color: oklch(0.90 0.08 240) !important;
+  border-color: oklch(0.48 0.12 240) !important;
+}
+
+/* Mobile spacing */
+@media (max-width: 640px) {
+  [data-sonner-toaster][data-y-position="top"] {
+    top: 76px !important;
+  }
+
+  [data-sonner-toast] {
+    width: calc(100vw - 24px) !important;
+    min-height: 62px !important;
+    padding: 15px 16px !important;
+    border-radius: 13px !important;
+  }
+}
