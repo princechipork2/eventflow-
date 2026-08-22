@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/context/NotificationContext";
 
 export default function PaymentCallback() {
-  const { success, error } = useNotifications();
+  const { alert, error: notifyError } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -153,9 +153,13 @@ export default function PaymentCallback() {
           return;
         }
 
-        success(
-          "Payment successful! Your ticket has been confirmed."
-        );
+        alert({
+          type: "success",
+          title: "Payment Successful",
+          message:
+            "Your ticket has been confirmed successfully.",
+          buttonText: "OK",
+        });
 
         setMessage(
           "Payment successful. Your ticket has been confirmed."
@@ -167,7 +171,7 @@ export default function PaymentCallback() {
               replace: true,
             });
           }
-        }, 1200);
+        }, 3000);
       } catch (error) {
         console.error(
           "PAYMENT CALLBACK ERROR:",
@@ -185,7 +189,7 @@ export default function PaymentCallback() {
 
         setMessage(errorMessage);
 
-        error(errorMessage);
+        notifyError(errorMessage);
       }
     };
 
@@ -194,7 +198,7 @@ export default function PaymentCallback() {
     return () => {
       cancelled = true;
     };
-  }, [navigate, searchParams]);
+  }, [alert, navigate, notifyError, searchParams]);
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
