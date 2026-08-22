@@ -15,12 +15,21 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import StatsCard from "@/components/StatsCard";
 import TicketCard from "@/components/TicketCard";
 import EventCard from "@/components/EventCard";
 import { useAuth } from "@/context/AuthContext";
-import { supabaseDb, type Event, type Order } from "@/services/supabaseDb";
+import {
+  supabaseDb,
+  type Event,
+  type Order,
+} from "@/services/supabaseDb";
 
 export default function Dashboard() {
   const { user, profile, isOrganizer, isLoading } = useAuth();
@@ -53,6 +62,29 @@ export default function Dashboard() {
     user?.user_metadata?.full_name ||
     "User";
 
+  /*
+   * ============================================================
+   * TIME-BASED GREETING
+   * ============================================================
+   *
+   * Uses the user's device/browser local time.
+   *
+   * 5:00  - 11:59  → Good morning
+   * 12:00 - 16:59  → Good afternoon
+   * 17:00 - 20:59  → Good evening
+   * 21:00 - 04:59  → Good night
+   */
+  const currentHour = new Date().getHours();
+
+  const greeting =
+    currentHour >= 5 && currentHour < 12
+      ? "Good morning"
+      : currentHour >= 12 && currentHour < 17
+        ? "Good afternoon"
+        : currentHour >= 17 && currentHour < 21
+          ? "Good evening"
+          : "Good night";
+
   useEffect(() => {
     if (!user || isLoading) return;
 
@@ -68,9 +100,6 @@ export default function Dashboard() {
        * ============================================================
        * ORGANIZER DASHBOARD
        * ============================================================
-       *
-       * Organizers do not need attendee statistics or their own
-       * purchased orders to render this dashboard.
        */
       if (isOrganizer) {
         try {
@@ -133,8 +162,6 @@ export default function Dashboard() {
        * ============================================================
        * ATTENDEE DASHBOARD
        * ============================================================
-       *
-       * Attendees only need their own orders and attendee statistics.
        */
       try {
         const orders = await supabaseDb.getOrders(user.id);
@@ -202,6 +229,7 @@ export default function Dashboard() {
       <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
         <div className="text-center">
           <LoaderCircle className="size-8 text-muted-foreground animate-spin mx-auto mb-4" />
+
           <p className="text-sm text-muted-foreground">
             Loading your dashboard...
           </p>
@@ -227,7 +255,7 @@ export default function Dashboard() {
               </h1>
 
               <p className="text-muted-foreground mt-1">
-                Welcome back, {displayName}
+                {greeting}, {displayName}
               </p>
             </div>
 
