@@ -12,7 +12,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { useNotifications } from "@/context/NotificationContext";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,7 @@ interface Review {
 }
 
 export default function EventDetails() {
+  const { success, error, info } = useNotifications();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
 
@@ -230,12 +231,12 @@ export default function EventDetails() {
     }
 
     if (!user) {
-      toast.error("Please sign in to purchase tickets.");
+      error("Please sign in to purchase tickets.");
       return;
     }
 
     if (!selectedTierData) {
-      toast.error("Please select a ticket type.");
+      error("Please select a ticket type.");
       return;
     }
 
@@ -243,12 +244,12 @@ export default function EventDetails() {
       selectedTierData.quantity - selectedTierData.sold;
 
     if (quantity < 1) {
-      toast.error("Quantity must be at least 1.");
+      error("Quantity must be at least 1.");
       return;
     }
 
     if (quantity > available) {
-      toast.error(
+      error(
         `Only ${available} ticket${
           available === 1 ? "" : "s"
         } available for this ticket type.`
@@ -298,7 +299,7 @@ export default function EventDetails() {
           );
         }
 
-        toast.success(
+        success(
           "Free ticket claimed successfully! Check your dashboard."
         );
       } else {
@@ -351,7 +352,7 @@ export default function EventDetails() {
           );
         }
 
-        toast.info(
+        info(
           "Complete your payment in the Paystack window."
         );
 
@@ -445,7 +446,7 @@ export default function EventDetails() {
           );
         }
 
-        toast.success(
+        success(
           "Payment successful! Your ticket has been confirmed."
         );
       }
@@ -499,7 +500,7 @@ export default function EventDetails() {
         .filter(Boolean)
         .join(" | ");
 
-      toast.error(
+      error(
         message ||
           "Unable to complete ticket purchase."
       );
@@ -510,12 +511,12 @@ export default function EventDetails() {
 
   const handleReview = async () => {
     if (!user) {
-      toast.error("Please sign in to leave a review.");
+      error("Please sign in to leave a review.");
       return;
     }
 
     if (!reviewText.trim()) {
-      toast.error("Please write a review.");
+      error("Please write a review.");
       return;
     }
 
@@ -527,7 +528,7 @@ export default function EventDetails() {
         comment: reviewText.trim(),
       });
 
-      toast.success("Review submitted!");
+      success("Review submitted!");
 
       setReviewText("");
       setReviewRating(5);
@@ -542,7 +543,7 @@ export default function EventDetails() {
         error
       );
 
-      toast.error(
+      error(
         error instanceof Error
           ? error.message
           : "Unable to submit review."
@@ -556,11 +557,11 @@ export default function EventDetails() {
         window.location.href
       );
 
-      toast.success(
+      success(
         "Event link copied to clipboard!"
       );
     } catch {
-      toast.error(
+      error(
         "Unable to copy event link."
       );
     }

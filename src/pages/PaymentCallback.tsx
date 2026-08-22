@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useNotifications } from "@/context/NotificationContext";
 
 export default function PaymentCallback() {
+  const { success, error } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -152,7 +153,7 @@ export default function PaymentCallback() {
           return;
         }
 
-        toast.success(
+        success(
           "Payment successful! Your ticket has been confirmed."
         );
 
@@ -184,7 +185,7 @@ export default function PaymentCallback() {
 
         setMessage(errorMessage);
 
-        toast.error(errorMessage);
+        error(errorMessage);
       }
     };
 

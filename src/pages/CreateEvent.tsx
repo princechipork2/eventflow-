@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { useNotifications } from "@/context/NotificationContext";
 import {
   supabaseDb,
   type Category,
@@ -51,6 +51,7 @@ interface TicketTierForm {
 }
 
 export default function CreateEvent() {
+  const { success, error, info } = useNotifications();
   const navigate = useNavigate();
   const { user, profile, isAuthenticated } = useAuth();
 
@@ -156,12 +157,12 @@ export default function CreateEvent() {
 
   const validateBasicInfo = () => {
     if (!form.title.trim()) {
-      toast.error("Please enter an event title.");
+      error("Please enter an event title.");
       return false;
     }
 
     if (!form.startDate || !form.endDate) {
-      toast.error("Please select the event start and end dates.");
+      error("Please select the event start and end dates.");
       return false;
     }
 
@@ -169,17 +170,17 @@ export default function CreateEvent() {
     const endDate = new Date(form.endDate);
 
     if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-      toast.error("Please enter valid event dates.");
+      error("Please enter valid event dates.");
       return false;
     }
 
     if (endDate <= startDate) {
-      toast.error("The event end time must be after the start time.");
+      error("The event end time must be after the start time.");
       return false;
     }
 
     if (form.capacity < 1) {
-      toast.error("Event capacity must be at least 1.");
+      error("Event capacity must be at least 1.");
       return false;
     }
 
@@ -188,25 +189,25 @@ export default function CreateEvent() {
 
   const validateTicketTiers = () => {
     if (ticketTiers.length === 0) {
-      toast.error("Please add at least one ticket tier.");
+      error("Please add at least one ticket tier.");
       return false;
     }
 
     for (const tier of ticketTiers) {
       if (!tier.name.trim()) {
-        toast.error("Every ticket tier must have a name.");
+        error("Every ticket tier must have a name.");
         return false;
       }
 
       if (tier.quantity < 1) {
-        toast.error(
+        error(
           `Ticket tier "${tier.name}" must have at least one ticket.`
         );
         return false;
       }
 
       if (tier.price < 0) {
-        toast.error(
+        error(
           `Ticket tier "${tier.name}" cannot have a negative price.`
         );
         return false;
@@ -216,7 +217,7 @@ export default function CreateEvent() {
         tier.type === "free" &&
         tier.price !== 0
       ) {
-        toast.error(
+        error(
           `Free ticket tier "${tier.name}" must have a price of 0.`
         );
         return false;
@@ -229,7 +230,7 @@ export default function CreateEvent() {
     );
 
     if (totalTierQuantity > form.capacity) {
-      toast.error(
+      error(
         `Ticket quantities (${totalTierQuantity}) cannot exceed event capacity (${form.capacity}).`
       );
       return false;
@@ -250,7 +251,7 @@ export default function CreateEvent() {
     }
 
     if (!user.id) {
-      toast.error("Your account could not be identified. Please sign in again.");
+      error("Your account could not be identified. Please sign in again.");
       return;
     }
 
@@ -334,7 +335,7 @@ export default function CreateEvent() {
         );
       }
 
-      toast.success("Event created successfully!");
+      success("Event created successfully!");
 
       navigate(`/events/${event.slug}`);
     } catch (error) {

@@ -13,12 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { useNotifications } from "@/context/NotificationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { APP_NAME } from "@/constants";
 
 export default function ResetPassword() {
+  const { success, error: notifyError } = useNotifications();
   const navigate = useNavigate();
   const { updatePassword } = useAuth();
 
@@ -44,7 +45,7 @@ export default function ResetPassword() {
         setHasRecoverySession(false);
         setCheckingSession(false);
 
-        toast.error(
+notifyError(
           "This password reset link is invalid or has expired."
         );
 
@@ -83,14 +84,14 @@ export default function ResetPassword() {
     e.preventDefault();
 
     if (newPassword.length < 6) {
-      toast.error(
+notifyError(
         "Password must be at least 6 characters."
       );
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords don't match.");
+notifyError("Passwords don't match.");
       return;
     }
 

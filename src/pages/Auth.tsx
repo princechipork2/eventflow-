@@ -25,11 +25,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { useNotifications } from "@/context/NotificationContext";
 import { useAuth } from "@/context/AuthContext";
 import { APP_NAME } from "@/constants";
 
 export default function Auth() {
+  const { success, error } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -115,12 +116,12 @@ export default function Auth() {
       !signupEmail.trim() ||
       !signupPassword.trim()
     ) {
-      toast.error("Please fill in all fields");
+      error("Please fill in all fields");
       return;
     }
 
     if (signupPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      error("Password must be at least 6 characters");
       return;
     }
 
@@ -140,13 +141,13 @@ export default function Auth() {
     if (ok) {
       setConfirmationEmail(email);
       setMode("confirmation");
-      toast.success("Account created. Check your email to confirm.");
+      success("Account created. Check your email to confirm.");
     }
   };
 
   const handleResendConfirmation = async () => {
     if (!confirmationEmail.trim()) {
-      toast.error("Please enter your email address.");
+      error("Please enter your email address.");
       return;
     }
 
@@ -161,7 +162,7 @@ export default function Auth() {
 
   const handleSignupFormResend = async () => {
     if (!signupEmail.trim()) {
-      toast.error("Enter your email address first.");
+      error("Enter your email address first.");
       return;
     }
 
@@ -183,7 +184,7 @@ export default function Auth() {
     e.preventDefault();
 
     if (!forgotEmail.trim()) {
-      toast.error("Please enter your email");
+      error("Please enter your email");
       return;
     }
 
@@ -200,12 +201,12 @@ export default function Auth() {
     e.preventDefault();
 
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      error("Password must be at least 6 characters");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords don't match");
+      error("Passwords don't match");
       return;
     }
 

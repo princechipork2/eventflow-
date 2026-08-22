@@ -8,7 +8,7 @@ import {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { toast } from "sonner";
+import { useNotifications } from "@/context/NotificationContext";
 
 interface Profile {
   id: string;
@@ -63,6 +63,7 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
+  const { success, error: notifyError } = useNotifications();
   const [user, setUser] =
     useState<User | null>(null);
 
@@ -229,11 +230,11 @@ export function AuthProvider({
         });
 
       if (error) {
-        toast.error(error.message);
+notifyError(error.message);
         return false;
       }
 
-      toast.success("Welcome back!");
+      success("Welcome back!");
       return true;
     },
     []
@@ -266,7 +267,7 @@ export function AuthProvider({
         });
 
       if (error) {
-        toast.error(error.message);
+notifyError(error.message);
         return false;
       }
 
@@ -281,7 +282,7 @@ export function AuthProvider({
         email.trim().toLowerCase();
 
       if (!cleanEmail) {
-        toast.error(
+notifyError(
           "Please enter your email address."
         );
 
@@ -312,17 +313,17 @@ export function AuthProvider({
             .toLowerCase()
             .includes("exceeded")
         ) {
-          toast.error(
+notifyError(
             "Email sending is temporarily rate-limited. Please wait before requesting another email."
           );
         } else {
-          toast.error(error.message);
+notifyError(error.message);
         }
 
         return false;
       }
 
-      toast.success(
+      success(
         "Confirmation email sent. Check your inbox."
       );
 
@@ -334,7 +335,7 @@ export function AuthProvider({
       await supabase.auth.signOut();
 
     if (error) {
-      toast.error(error.message);
+notifyError(error.message);
       return;
     }
 
@@ -357,11 +358,11 @@ export function AuthProvider({
         );
 
       if (error) {
-        toast.error(error.message);
+notifyError(error.message);
         return false;
       }
 
-      toast.success(
+      success(
         "Password reset link sent to your email."
       );
 
@@ -376,11 +377,11 @@ export function AuthProvider({
         });
 
       if (error) {
-        toast.error(error.message);
+notifyError(error.message);
         return false;
       }
 
-      toast.success(
+      success(
         "Password updated successfully!"
       );
 
