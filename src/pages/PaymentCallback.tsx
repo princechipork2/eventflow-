@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/context/NotificationContext";
 
 export default function PaymentCallback() {
-  const { alert, error: notifyError } = useNotifications();
+  const { success, error: notifyError } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -80,13 +80,6 @@ export default function PaymentCallback() {
           );
         }
 
-        /*
-         * Finalize the verified payment into an actual ticket.
-         *
-         * Diagnostic logging is intentionally included here so
-         * we can identify the exact PostgreSQL RPC failure if
-         * finalization does not succeed.
-         */
         const {
           data: finalized,
           error: finalizeError,
@@ -100,37 +93,7 @@ export default function PaymentCallback() {
           }
         );
 
-        console.log(
-          "FINALIZE RPC DATA:",
-          finalized
-        );
-
-        console.log(
-          "FINALIZE RPC ERROR:",
-          finalizeError
-        );
-
         if (finalizeError) {
-          console.error(
-            "FINALIZE RPC ERROR MESSAGE:",
-            finalizeError.message
-          );
-
-          console.error(
-            "FINALIZE RPC ERROR DETAILS:",
-            finalizeError.details
-          );
-
-          console.error(
-            "FINALIZE RPC ERROR HINT:",
-            finalizeError.hint
-          );
-
-          console.error(
-            "FINALIZE RPC ERROR CODE:",
-            finalizeError.code
-          );
-
           throw new Error(
             finalizeError.message ||
               "Ticket finalization failed."
@@ -138,11 +101,6 @@ export default function PaymentCallback() {
         }
 
         if (!finalized?.success) {
-          console.error(
-            "FINALIZE RPC UNSUCCESSFUL RESULT:",
-            finalized
-          );
-
           throw new Error(
             finalized?.message ||
               "Payment succeeded but ticket finalization failed."
@@ -153,13 +111,9 @@ export default function PaymentCallback() {
           return;
         }
 
-        alert({
-          type: "success",
-          title: "Payment Successful",
-          message:
-            "Your ticket has been confirmed successfully.",
-          buttonText: "OK",
-        });
+        success(
+          "Payment successful! Your ticket has been confirmed."
+        );
 
         setMessage(
           "Payment successful. Your ticket has been confirmed."
@@ -173,11 +127,6 @@ export default function PaymentCallback() {
           }
         }, 3000);
       } catch (error) {
-        console.error(
-          "PAYMENT CALLBACK ERROR:",
-          error
-        );
-
         if (cancelled) {
           return;
         }
@@ -198,7 +147,7 @@ export default function PaymentCallback() {
     return () => {
       cancelled = true;
     };
-  }, [alert, navigate, notifyError, searchParams]);
+  }, [navigate, searchParams, success, notifyError]);
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">

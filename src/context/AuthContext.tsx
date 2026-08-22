@@ -168,11 +168,6 @@ export function AuthProvider({
       (event, session) => {
         if (!mounted) return;
 
-        console.log(
-          "AUTH STATE CHANGE:",
-          event,
-          session?.user?.email ?? null
-        );
 
         const currentUser =
           session?.user ?? null;
