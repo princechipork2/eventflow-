@@ -545,82 +545,38 @@ export const supabaseDb = {
     totalAmount: number;
     status?: OrderStatus;
   }): Promise<Order> {
-    const { data: createdOrder, error: orderError } =
-      await supabase
-        .from("orders")
-        .insert({
-          user_id: order.userId,
-          event_id: order.eventId,
-          total_amount: order.totalAmount,
-          status: "pending",
-          payment_status: "pending",
-        })
-        .select("*")
-        .single();
+    const { data, error } = await supabase.rpc(
+      "create_paid_ticket_order",
+      {
+        p_event_id: order.eventId,
+        p_ticket_tier_id: order.ticketTierId,
+        p_quantity: order.quantity,
+      }
+    );
 
-    if (orderError) {
-      console.error(
-        "Error creating order:",
-        orderError.message
-      );
-      throw orderError;
+    if (error) {
+      console.error("Error creating paid ticket order:", error);
+      throw error;
     }
 
-    const { data: tier, error: tierError } =
-      await supabase
-        .from("ticket_tiers")
-        .select("price")
-        .eq("id", order.ticketTierId)
-        .single();
-
-    if (tierError) {
-      console.error(
-        "Error fetching ticket tier price:",
-        tierError.message
+    if (!data?.success || !data?.order_id) {
+      throw new Error(
+        data?.message || "Unable to create paid ticket order."
       );
-      throw tierError;
-    }
-
-    const unitPrice = Number(tier.price ?? 0);
-
-    const { error: itemError } = await supabase
-      .from("order_items")
-      .insert({
-        order_id: createdOrder.id,
-        ticket_tier_id: order.ticketTierId,
-        quantity: order.quantity,
-        unit_price: unitPrice,
-        subtotal: unitPrice * order.quantity,
-      });
-
-    if (itemError) {
-      console.error(
-        "Error creating order item:",
-        itemError.message
-      );
-
-      await supabase
-        .from("orders")
-        .delete()
-        .eq("id", createdOrder.id);
-
-      throw itemError;
     }
 
     return {
-      id: createdOrder.id,
-      userId: createdOrder.user_id,
-      eventId: createdOrder.event_id,
+      id: data.order_id,
+      userId: order.userId,
+      eventId: order.eventId,
       ticketTierId: order.ticketTierId,
-      quantity: order.quantity,
-      totalAmount: Number(createdOrder.total_amount),
+      quantity: data.quantity,
+      totalAmount: Number(data.total_amount),
       status: "pending",
-      createdAt: createdOrder.created_at,
+      createdAt: new Date().toISOString(),
       qrCode: "",
     };
   },
-
-
   async updateOrderStatus(
     id: string,
     status: OrderStatus
