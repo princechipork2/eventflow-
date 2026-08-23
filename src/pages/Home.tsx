@@ -11,11 +11,14 @@ import {
   Sparkles,
   ChevronRight,
   ImageOff,
+  LoaderCircle,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/EventCard";
 import { supabaseDb } from "@/services/supabaseDb";
+import { getPlatformStats } from "@/services/platformStats";
 import type { Event } from "@/types/event";
 import { APP_NAME, APP_TAGLINE } from "@/constants";
 
@@ -28,7 +31,7 @@ const features = [
   {
     icon: <Shield className="size-5" />,
     title: "Secure Payments",
-    desc: "End-to-end encrypted transactions with fraud protection and full PCI compliance.",
+    desc: "Secure transactions with reliable payment processing and ticket protection.",
   },
   {
     icon: <TrendingUp className="size-5" />,
@@ -42,16 +45,30 @@ const features = [
   },
 ];
 
-const stats = [
-  { value: "10K+", label: "Events Hosted" },
-  { value: "500K+", label: "Tickets Sold" },
-  { value: "50K+", label: "Happy Attendees" },
-  { value: "98%", label: "Satisfaction Rate" },
-];
+function formatStat(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M+`;
+  }
+
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K+`;
+  }
+
+  return value.toLocaleString();
+}
 
 export default function Home() {
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+
+  const [platformStats, setPlatformStats] = useState<{
+    totalEvents: number;
+    totalTicketsSold: number;
+    totalAttendees: number;
+    totalOrders: number;
+  } | null>(null);
+
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -78,20 +95,65 @@ export default function Home() {
       }
     };
 
+    const loadPlatformStats = async () => {
+      try {
+        const stats = await getPlatformStats();
+
+        if (mounted) {
+          setPlatformStats(stats);
+        }
+      } catch (error) {
+        console.error("Error loading platform statistics:", error);
+
+        if (mounted) {
+          setPlatformStats(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingStats(false);
+        }
+      }
+    };
+
     loadFeaturedEvents();
+    loadPlatformStats();
 
     return () => {
       mounted = false;
     };
   }, []);
 
+  const stats = platformStats
+    ? [
+        {
+          value: formatStat(platformStats.totalEvents),
+          label: "Events Hosted",
+        },
+        {
+          value: formatStat(platformStats.totalTicketsSold),
+          label: "Tickets Sold",
+        },
+        {
+          value: formatStat(platformStats.totalAttendees),
+          label: "Attendees",
+        },
+        {
+          value: formatStat(platformStats.totalOrders),
+          label: "Confirmed Orders",
+        },
+      ]
+    : [];
+
   return (
     <div className="min-h-screen">
-      {/* ── Hero Section ── */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-muted">
+      {/* ============================================================
+          HERO
+      ============================================================ */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-muted">
+        {/* Background image */}
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&q=80"
+            src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&q=85"
             alt=""
             className="w-full h-full object-cover"
             fetchPriority="high"
@@ -100,42 +162,55 @@ export default function Home() {
             }}
           />
 
-          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/70 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-purple-500/10" />
+          {/* Dark cinematic overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/30" />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/20" />
+
+          <div className="absolute inset-0 bg-primary/5" />
         </div>
 
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse-soft" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
+        {/* Decorative glow */}
+        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse-soft" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 text-center">
+        <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
+
+        {/* Hero content */}
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-3xl text-left"
           >
-            <Badge className="mb-6 px-4 py-1.5 text-xs font-bold bg-black/40 text-white border-white/30 backdrop-blur-sm drop-shadow-lg">
+            <Badge className="mb-6 px-4 py-1.5 text-xs font-bold bg-black/40 text-white border-white/30 backdrop-blur-sm">
               <Sparkles className="size-3 mr-1.5" />
               The Future of Event Ticketing
             </Badge>
 
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 drop-shadow-2xl">
-              <span className="gradient-text drop-shadow-2xl">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[1.05]">
+              <span className="gradient-text">
                 {APP_TAGLINE}
               </span>
+
               <br />
-              <span className="text-white drop-shadow-2xl">
+
+              <span className="text-white">
                 Made Simple
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-white font-medium max-w-2xl mx-auto mb-8 leading-relaxed bg-black/70 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4 shadow-xl">
+            <p className="text-lg sm:text-xl text-white/90 font-medium max-w-2xl mb-8 leading-relaxed">
               The premium platform for creating, discovering, and experiencing
               extraordinary events. From intimate gatherings to grand festivals.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
               <Link to="/events">
-                <Button size="lg" className="gap-2 text-base px-8">
+                <Button
+                  size="lg"
+                  className="gap-2 text-base px-8 shadow-lg shadow-primary/20"
+                >
                   Discover Events
                   <ArrowRight className="size-4" />
                 </Button>
@@ -145,27 +220,43 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="gap-2 text-base px-8"
+                  className="gap-2 text-base px-8 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white backdrop-blur-sm"
                 >
                   Create Event
                   <Ticket className="size-4" />
                 </Button>
               </Link>
             </div>
+
+            {/* Small supporting message */}
+            <div className="mt-8 flex items-center gap-2 text-sm text-white/60">
+              <div className="flex -space-x-2">
+                <div className="size-7 rounded-full bg-primary/70 border-2 border-white/20" />
+                <div className="size-7 rounded-full bg-purple-500/70 border-2 border-white/20" />
+                <div className="size-7 rounded-full bg-emerald-500/70 border-2 border-white/20" />
+              </div>
+
+              <span>
+                Discover events. Buy tickets. Make memories.
+              </span>
+            </div>
           </motion.div>
         </div>
 
+        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50"
         >
           <ChevronRight className="size-5 rotate-90" />
         </motion.div>
       </section>
 
-      {/* ── Stats Bar ── */}
+      {/* ============================================================
+          LIVE STATISTICS
+      ============================================================ */}
       <section className="relative -mt-20 z-20 mx-auto max-w-5xl px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -173,20 +264,39 @@ export default function Home() {
           viewport={{ once: true }}
           className="glass-strong rounded-2xl p-6 sm:p-8 grid grid-cols-2 md:grid-cols-4 gap-6"
         >
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-2xl sm:text-3xl font-bold gradient-text">
-                {stat.value}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.label}
+          {isLoadingStats ? (
+            <div className="col-span-2 md:col-span-4 flex items-center justify-center py-4">
+              <LoaderCircle className="size-5 text-muted-foreground animate-spin" />
+
+              <span className="ml-2 text-sm text-muted-foreground">
+                Loading live statistics...
+              </span>
+            </div>
+          ) : stats.length > 0 ? (
+            stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="text-2xl sm:text-3xl font-bold gradient-text">
+                  {stat.value}
+                </p>
+
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.label}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-2 md:col-span-4 text-center py-2">
+              <p className="text-sm text-muted-foreground">
+                Statistics will appear as events and tickets are added.
               </p>
             </div>
-          ))}
+          )}
         </motion.div>
       </section>
 
-      {/* ── Featured Events ── */}
+      {/* ============================================================
+          FEATURED EVENTS
+      ============================================================ */}
       <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -265,7 +375,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Features Grid ── */}
+      {/* ============================================================
+          FEATURES
+      ============================================================ */}
       <section className="py-20 sm:py-28 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -314,7 +426,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CTA Section ── */}
+      {/* ============================================================
+          CTA
+      ============================================================ */}
       <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <motion.div
@@ -335,8 +449,8 @@ export default function Home() {
               </h2>
 
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Join thousands of organizers who trust {APP_NAME} to power
-                their events. Start free, upgrade as you grow.
+                Join organizers who trust {APP_NAME} to power their events.
+                Start free and grow as your audience grows.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
