@@ -18,6 +18,7 @@ import TermsOfService from "@/pages/TermsOfService";
 import Help from "@/pages/Help";
 import About from "@/pages/About";
 import PaymentCallback from "@/pages/PaymentCallback";
+import CheckIn from "@/pages/CheckIn";
 
 function AppLayout() {
   return (
@@ -60,6 +61,15 @@ function AppLayout() {
           />
 
           <Route
+            path="/check-in"
+            element={
+              <ProtectedRoute requireOrganizer>
+                <CheckIn />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/auth"
             element={<Auth />}
           />
@@ -77,6 +87,7 @@ function AppLayout() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/privacy-policy"
             element={<PrivacyPolicy />}

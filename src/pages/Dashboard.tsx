@@ -11,6 +11,7 @@ import {
   Star,
   ChartBar,
   LoaderCircle,
+  QrCode,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -396,7 +397,7 @@ export default function Dashboard() {
             {isOrganizer && (
               <div className="glass rounded-2xl p-6">
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                   <div>
                     <h3 className="font-semibold">
                       Event Management
@@ -407,12 +408,25 @@ export default function Dashboard() {
                     </p>
                   </div>
 
-                  <Link to="/events/create">
-                    <Button size="sm" className="gap-2">
-                      <Plus className="size-4" />
-                      Create Event
-                    </Button>
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to="/check-in">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        <QrCode className="size-4" />
+                        Check In Tickets
+                      </Button>
+                    </Link>
+
+                    <Link to="/events/create">
+                      <Button size="sm" className="gap-2">
+                        <Plus className="size-4" />
+                        Create Event
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
 
                 {myEvents.length === 0 ? (
@@ -490,8 +504,8 @@ export default function Dashboard() {
                             order.status === "confirmed"
                               ? "text-emerald-400 border-emerald-500/30"
                               : order.status === "pending"
-                              ? "text-amber-400 border-amber-500/30"
-                              : "text-rose-400 border-rose-500/30"
+                                ? "text-amber-400 border-amber-500/30"
+                                : "text-rose-400 border-rose-500/30"
                           }`}
                         >
                           {order.status}
