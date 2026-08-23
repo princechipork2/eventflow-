@@ -36,6 +36,7 @@ export default function Auth() {
 
   const {
     login,
+    signInWithGoogle,
     signup,
     resendConfirmationEmail,
     sendPasswordResetEmail,
@@ -74,6 +75,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -105,6 +107,26 @@ export default function Auth() {
 
     if (ok) {
       navigate("/dashboard");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleSubmitting(true);
+
+    const ok = await signInWithGoogle();
+
+    if (!ok) {
+      setGoogleSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setGoogleSubmitting(true);
+
+    const ok = await signInWithGoogle(signupRole);
+
+    if (!ok) {
+      setGoogleSubmitting(false);
     }
   };
 
@@ -472,255 +494,305 @@ export default function Auth() {
               </TabsList>
 
               <TabsContent value="login">
-                <form
-                  onSubmit={handleLogin}
-                  className="space-y-4"
-                >
-                  <div>
-                    <Label htmlFor="login-email">
-                      Email
-                    </Label>
-
-                    <div className="relative mt-1.5">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={loginEmail}
-                        onChange={(e) =>
-                          setLoginEmail(e.target.value)
-                        }
-                        className="pl-9 bg-background border-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="login-password">
-                        Password
-                      </Label>
-
-                      <button
-                        type="button"
-                        onClick={() => setMode("forgot")}
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-
-                    <div className="relative mt-1.5">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-
-                      <Input
-                        id="login-password"
-                        type={
-                          showPassword
-                            ? "text"
-                            : "password"
-                        }
-                        placeholder="••••••••"
-                        value={loginPassword}
-                        onChange={(e) =>
-                          setLoginPassword(e.target.value)
-                        }
-                        className="pl-9 pr-9 bg-background border-input"
-                        required
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPassword(!showPassword)
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="size-4" />
-                        ) : (
-                          <Eye className="size-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full gap-2"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <LoaderCircle className="size-4 animate-spin" />
-                    ) : (
-                      <ArrowRight className="size-4" />
-                    )}
-                    Sign In
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form
-                  onSubmit={handleSignup}
-                  className="space-y-4"
-                >
-                  <div>
-                    <Label htmlFor="signup-name">
-                      Full Name
-                    </Label>
-
-                    <div className="relative mt-1.5">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-
-                      <Input
-                        id="signup-name"
-                        placeholder="Your name"
-                        value={signupName}
-                        onChange={(e) =>
-                          setSignupName(e.target.value)
-                        }
-                        className="pl-9 bg-background border-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="signup-email">
-                      Email
-                    </Label>
-
-                    <div className="relative mt-1.5">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={signupEmail}
-                        onChange={(e) =>
-                          setSignupEmail(e.target.value)
-                        }
-                        className="pl-9 bg-background border-input"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="signup-password">
-                      Password
-                    </Label>
-
-                    <div className="relative mt-1.5">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-
-                      <Input
-                        id="signup-password"
-                        type={
-                          showPassword
-                            ? "text"
-                            : "password"
-                        }
-                        placeholder="At least 6 characters"
-                        value={signupPassword}
-                        onChange={(e) =>
-                          setSignupPassword(e.target.value)
-                        }
-                        className="pl-9 pr-9 bg-background border-input"
-                        required
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPassword(!showPassword)
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="size-4" />
-                        ) : (
-                          <Eye className="size-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>I want to</Label>
-
-                    <div className="grid grid-cols-2 gap-2 mt-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSignupRole("attendee")
-                        }
-                        className={`p-3 rounded-xl border text-sm transition-all ${
-                          signupRole === "attendee"
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-muted hover:border-primary/30"
-                        }`}
-                      >
-                        <User className="size-4 mx-auto mb-1" />
-                        Attend Events
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSignupRole("organizer")
-                        }
-                        className={`p-3 rounded-xl border text-sm transition-all ${
-                          signupRole === "organizer"
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-muted hover:border-primary/30"
-                        }`}
-                      >
-                        <Sparkles className="size-4 mx-auto mb-1" />
-                        Create Events
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full gap-2"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <LoaderCircle className="size-4 animate-spin" />
-                    ) : (
-                      <ArrowRight className="size-4" />
-                    )}
-                    Create Account
-                  </Button>
-
+                <div className="space-y-4">
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full gap-2"
-                    onClick={handleSignupFormResend}
-                    disabled={resending}
+                    className="w-full gap-3"
+                    onClick={handleGoogleSignIn}
+                    disabled={googleSubmitting}
                   >
-                    {resending ? (
+                    {googleSubmitting ? (
                       <LoaderCircle className="size-4 animate-spin" />
                     ) : (
-                      <RefreshCw className="size-4" />
+                      <span className="font-bold text-base">G</span>
                     )}
-                    Resend Confirmation Email
+                    Continue with Google
                   </Button>
 
-                  <p className="text-xs text-center text-muted-foreground">
-                    Already created an account but haven't
-                    confirmed your email? Enter that email above
-                    and use the resend button.
-                  </p>
-                </form>
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">
+                      OR
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <form
+                    onSubmit={handleLogin}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Label htmlFor="login-email">
+                        Email
+                      </Label>
+
+                      <div className="relative mt-1.5">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={loginEmail}
+                          onChange={(e) =>
+                            setLoginEmail(e.target.value)
+                          }
+                          className="pl-9 bg-background border-input"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="login-password">
+                          Password
+                        </Label>
+
+                        <button
+                          type="button"
+                          onClick={() => setMode("forgot")}
+                          className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+
+                      <div className="relative mt-1.5">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+
+                        <Input
+                          id="login-password"
+                          type={
+                            showPassword
+                              ? "text"
+                              : "password"
+                          }
+                          placeholder="••••••••"
+                          value={loginPassword}
+                          onChange={(e) =>
+                            setLoginPassword(e.target.value)
+                          }
+                          className="pl-9 pr-9 bg-background border-input"
+                          required
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPassword(!showPassword)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full gap-2"
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <LoaderCircle className="size-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="size-4" />
+                      )}
+                      Sign In
+                    </Button>
+                  </form>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="signup">
+                <div className="space-y-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-3"
+                    onClick={handleGoogleSignup}
+                    disabled={googleSubmitting}
+                  >
+                    {googleSubmitting ? (
+                      <LoaderCircle className="size-4 animate-spin" />
+                    ) : (
+                      <span className="font-bold text-base">G</span>
+                    )}
+                    Continue with Google
+                  </Button>
+
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">
+                      OR
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <form
+                    onSubmit={handleSignup}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Label htmlFor="signup-name">
+                        Full Name
+                      </Label>
+
+                      <div className="relative mt-1.5">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+
+                        <Input
+                          id="signup-name"
+                          placeholder="Your name"
+                          value={signupName}
+                          onChange={(e) =>
+                            setSignupName(e.target.value)
+                          }
+                          className="pl-9 bg-background border-input"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="signup-email">
+                        Email
+                      </Label>
+
+                      <div className="relative mt-1.5">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={signupEmail}
+                          onChange={(e) =>
+                            setSignupEmail(e.target.value)
+                          }
+                          className="pl-9 bg-background border-input"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="signup-password">
+                        Password
+                      </Label>
+
+                      <div className="relative mt-1.5">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+
+                        <Input
+                          id="signup-password"
+                          type={
+                            showPassword
+                              ? "text"
+                              : "password"
+                          }
+                          placeholder="At least 6 characters"
+                          value={signupPassword}
+                          onChange={(e) =>
+                            setSignupPassword(e.target.value)
+                          }
+                          className="pl-9 pr-9 bg-background border-input"
+                          required
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPassword(!showPassword)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>I want to</Label>
+
+                      <div className="grid grid-cols-2 gap-2 mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSignupRole("attendee")
+                          }
+                          className={`p-3 rounded-xl border text-sm transition-all ${
+                            signupRole === "attendee"
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-muted hover:border-primary/30"
+                          }`}
+                        >
+                          <User className="size-4 mx-auto mb-1" />
+                          Attend Events
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSignupRole("organizer")
+                          }
+                          className={`p-3 rounded-xl border text-sm transition-all ${
+                            signupRole === "organizer"
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-muted hover:border-primary/30"
+                          }`}
+                        >
+                          <Sparkles className="size-4 mx-auto mb-1" />
+                          Create Events
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full gap-2"
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <LoaderCircle className="size-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="size-4" />
+                      )}
+                      Create Account
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleSignupFormResend}
+                      disabled={resending}
+                    >
+                      {resending ? (
+                        <LoaderCircle className="size-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="size-4" />
+                      )}
+                      Resend Confirmation Email
+                    </Button>
+
+                    <p className="text-xs text-center text-muted-foreground">
+                      Already created an account but haven't
+                      confirmed your email? Enter that email above
+                      and use the resend button.
+                    </p>
+                  </form>
+                </div>
               </TabsContent>
             </Tabs>
           )}

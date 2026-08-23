@@ -31,6 +31,8 @@ interface AuthContextType {
     password: string
   ) => Promise<boolean>;
 
+  signInWithGoogle: (role?: "organizer" | "attendee") => Promise<boolean>;
+
   signup: (
     name: string,
     email: string,
@@ -64,6 +66,7 @@ export function AuthProvider({
   children: ReactNode;
 }) {
   const { success, error: notifyError } = useNotifications();
+
   const [user, setUser] =
     useState<User | null>(null);
 
@@ -97,7 +100,7 @@ export function AuthProvider({
   );
 
   const refreshProfile = useCallback(
-    async () => {
+    async (_role?: "organizer" | "attendee") => {
       if (!user) {
         setProfile(null);
         return;
@@ -111,7 +114,7 @@ export function AuthProvider({
   useEffect(() => {
     let mounted = true;
 
-    const initialiseAuth = async () => {
+    const initialiseAuth = async (_role?: "organizer" | "attendee") => {
       try {
         const {
           data: { session },
@@ -137,9 +140,7 @@ export function AuthProvider({
         setUser(currentUser);
 
         if (currentUser) {
-          await fetchProfile(
-            currentUser.id
-          );
+          await fetchProfile(currentUser.id);
         } else {
           setProfile(null);
         }
@@ -168,7 +169,6 @@ export function AuthProvider({
       (event, session) => {
         if (!mounted) return;
 
-
         const currentUser =
           session?.user ?? null;
 
@@ -188,9 +188,7 @@ export function AuthProvider({
 
           setTimeout(() => {
             if (mounted) {
-              fetchProfile(
-                currentUser.id
-              );
+              fetchProfile(currentUser.id);
             }
           }, 0);
 
@@ -225,14 +223,42 @@ export function AuthProvider({
         });
 
       if (error) {
-notifyError(error.message);
+        notifyError(error.message);
         return false;
       }
 
       success("Welcome back!");
       return true;
     },
-    []
+    [notifyError, success]
+  );
+
+  const signInWithGoogle = useCallback(
+    async (_role?: "organizer" | "attendee") => {
+      const redirectTo =
+        `${window.location.origin}/auth`;
+
+      const { error } =
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+          },
+        });
+
+      if (error) {
+        console.error(
+          "GOOGLE SIGN IN ERROR:",
+          error.message
+        );
+
+        notifyError(error.message);
+        return false;
+      }
+
+      return true;
+    },
+    [notifyError]
   );
 
   const signup = useCallback(
@@ -262,13 +288,13 @@ notifyError(error.message);
         });
 
       if (error) {
-notifyError(error.message);
+        notifyError(error.message);
         return false;
       }
 
       return true;
     },
-    []
+    [notifyError]
   );
 
   const resendConfirmationEmail =
@@ -277,7 +303,7 @@ notifyError(error.message);
         email.trim().toLowerCase();
 
       if (!cleanEmail) {
-notifyError(
+        notifyError(
           "Please enter your email address."
         );
 
@@ -308,11 +334,11 @@ notifyError(
             .toLowerCase()
             .includes("exceeded")
         ) {
-notifyError(
+          notifyError(
             "Email sending is temporarily rate-limited. Please wait before requesting another email."
           );
         } else {
-notifyError(error.message);
+          notifyError(error.message);
         }
 
         return false;
@@ -323,20 +349,20 @@ notifyError(error.message);
       );
 
       return true;
-    }, []);
+    }, [notifyError, success]);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (_role?: "organizer" | "attendee") => {
     const { error } =
       await supabase.auth.signOut();
 
     if (error) {
-notifyError(error.message);
+      notifyError(error.message);
       return;
     }
 
     setUser(null);
     setProfile(null);
-  }, []);
+  }, [notifyError]);
 
   const sendPasswordResetEmail =
     useCallback(async (email: string) => {
@@ -353,7 +379,7 @@ notifyError(error.message);
         );
 
       if (error) {
-notifyError(error.message);
+        notifyError(error.message);
         return false;
       }
 
@@ -362,7 +388,7 @@ notifyError(error.message);
       );
 
       return true;
-    }, []);
+    }, [notifyError, success]);
 
   const updatePassword = useCallback(
     async (newPassword: string) => {
@@ -372,7 +398,7 @@ notifyError(error.message);
         });
 
       if (error) {
-notifyError(error.message);
+        notifyError(error.message);
         return false;
       }
 
@@ -382,7 +408,7 @@ notifyError(error.message);
 
       return true;
     },
-    []
+    [notifyError, success]
   );
 
   return (
@@ -396,6 +422,7 @@ notifyError(error.message);
           profile?.role === "organizer",
         isLoading,
         login,
+        signInWithGoogle,
         signup,
         resendConfirmationEmail,
         logout,
