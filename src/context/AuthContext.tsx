@@ -16,6 +16,7 @@ interface Profile {
   email: string;
   role: "organizer" | "attendee";
   avatar_url?: string;
+  phone_number?: string;
   created_at: string;
 }
 
@@ -52,6 +53,11 @@ interface AuthContextType {
 
   updatePassword: (
     newPassword: string
+  ) => Promise<boolean>;
+
+  updateProfile: (
+    fullName: string,
+    phoneNumber: string
   ) => Promise<boolean>;
 
   refreshProfile: () => Promise<void>;
@@ -390,6 +396,51 @@ export function AuthProvider({
       return true;
     }, [notifyError, success]);
 
+  const updateProfile = useCallback(
+    async (
+      fullName: string,
+      phoneNumber: string
+    ) => {
+      if (!user) {
+        notifyError(
+          "You must be signed in to update your profile."
+        );
+        return false;
+      }
+
+      const cleanName = fullName.trim();
+      const cleanPhone = phoneNumber.trim();
+
+      if (!cleanName) {
+        notifyError("Full name is required.");
+        return false;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: cleanName,
+          phone_number: cleanPhone || null,
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error(
+          "Error updating profile:",
+          error.message
+        );
+        notifyError(error.message);
+        return false;
+      }
+
+      await fetchProfile(user.id);
+
+      success("Profile updated successfully!");
+      return true;
+    },
+    [user, fetchProfile, notifyError, success]
+  );
+
   const updatePassword = useCallback(
     async (newPassword: string) => {
       const { error } =
@@ -428,6 +479,7 @@ export function AuthProvider({
         logout,
         sendPasswordResetEmail,
         updatePassword,
+        updateProfile,
         refreshProfile,
       }}
     >
