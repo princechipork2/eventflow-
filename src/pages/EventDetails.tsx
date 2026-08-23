@@ -226,9 +226,7 @@ export default function EventDetails() {
    * Tickets are NOT created before successful payment.
    */
   const handlePurchase = async () => {
-    if (isPurchasing) {
-      return;
-    }
+    if (isPurchasing) return;
 
     if (!user) {
       error("Please sign in to purchase tickets.");
@@ -260,13 +258,46 @@ export default function EventDetails() {
     setIsPurchasing(true);
 
     try {
-      /*
-       * STEP 1:
-       * Create a pending order.
-       *
-       * IMPORTANT:
-       * createOrder() no longer creates a ticket.
-       */
+      if (totalPrice === 0) {
+        const {
+          data: freeTicket,
+          error: freeTicketError,
+        } = await supabase.rpc("create_free_ticket_order", {
+          p_event_id: event.id,
+          p_ticket_tier_id: selectedTierData.id,
+          p_quantity: quantity,
+        });
+
+        if (freeTicketError) {
+          throw freeTicketError;
+        }
+
+        if (!freeTicket?.success) {
+          throw new Error(
+            freeTicket?.message ||
+              "Unable to claim free ticket."
+          );
+        }
+
+        success(
+          "Free ticket claimed successfully! Check your dashboard."
+        );
+
+        const [updatedEvent, updatedTiers] =
+          await Promise.all([
+            supabaseDb.getEvent(event.id),
+            supabaseDb.getTicketTiers(event.id),
+          ]);
+
+        if (updatedEvent) {
+          setEvent(updatedEvent);
+        }
+
+        setTiers(updatedTiers);
+        setQuantity(1);
+        return;
+      }
+
       const order = await supabaseDb.createOrder({
         userId: user.id,
         eventId: event.id,
@@ -276,184 +307,124 @@ export default function EventDetails() {
         status: "pending",
       });
 
-      /*
-       * Free tickets do not need Paystack.
-       * We can finalize them immediately.
-       */
-      if (totalPrice === 0) {
-        const { data: finalized, error: finalizeError } =
-          await supabase.rpc("finalize_ticket_purchase", {
-            p_order_id: order.id,
-            p_ticket_tier_id: selectedTierData.id,
-            p_payment_reference: `FREE-${order.id}`,
-          });
-
-        if (finalizeError) {
-          throw finalizeError;
+      const {
+        data: paymentData,
+        error: paymentInitError,
+      } = await supabase.functions.invoke(
+        "initialize-payment",
+        {
+          body: {
+            order_id: order.id,
+          },
         }
+      );
 
-        if (!finalized?.success) {
-          throw new Error(
-            finalized?.message ||
-              "Unable to finalize free ticket purchase."
-          );
-        }
+      if (paymentInitError) {
+        throw paymentInitError;
+      }
 
-        success(
-          "Free ticket claimed successfully! Check your dashboard."
-        );
-      } else {
-        /*
-         * STEP 2:
-         * Initialise Paystack payment.
-         */
-        const { data: paymentData, error: paymentInitError } =
-          await supabase.functions.invoke(
-            "initialize-payment",
-            {
-              body: {
-                order_id: order.id,
-              },
-            }
-          );
-
-        if (paymentInitError) {
-          throw paymentInitError;
-        }
-
-        if (
-          !paymentData?.success ||
-          !paymentData?.authorization_url ||
-          !paymentData?.reference
-        ) {
-          throw new Error(
-            paymentData?.message ||
-              "Unable to initialise payment."
-          );
-        }
-
-        const reference = paymentData.reference;
-
-        /*
-         * STEP 3:
-         * Open Paystack's hosted checkout.
-         *
-         * We use the returned authorization URL rather
-         * than exposing the Paystack secret key in the app.
-         */
-        const paymentWindow = window.open(
-          paymentData.authorization_url,
-          "_blank"
-        );
-
-        if (!paymentWindow) {
-          throw new Error(
-            "Payment window was blocked. Please allow pop-ups and try again."
-          );
-        }
-
-        info(
-          "Complete your payment in the Paystack window."
-        );
-
-        /*
-         * STEP 4:
-         * Poll our verify-payment Edge Function.
-         *
-         * Paystack verification happens server-side.
-         */
-        let verified = false;
-        let verificationResult: any = null;
-
-        for (let attempt = 0; attempt < 60; attempt++) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, 3000)
-          );
-
-          const {
-            data: verifyData,
-            error: verifyError,
-          } = await supabase.functions.invoke(
-            "verify-payment",
-            {
-              body: {
-                reference,
-                order_id: order.id,
-              },
-            }
-          );
-
-          if (verifyError) {
-            console.error(
-              "Payment verification attempt error:",
-              JSON.stringify(
-                verifyError,
-                Object.getOwnPropertyNames(verifyError),
-                2
-              )
-            );
-            continue;
-          }
-
-          verificationResult = verifyData;
-
-          if (
-            verifyData?.success &&
-            verifyData?.payment_status === "success"
-          ) {
-            verified = true;
-            break;
-          }
-        }
-
-        if (!verified) {
-          throw new Error(
-            verificationResult?.message ||
-              "Payment could not be verified. If you completed payment, please contact support with your payment reference."
-          );
-        }
-
-        /*
-         * STEP 5:
-         * Finalize the purchase atomically in PostgreSQL.
-         *
-         * This:
-         * - confirms the order
-         * - records the payment reference
-         * - increases ticket_tiers.sold
-         * - creates the confirmed ticket
-         */
-        const {
-          data: finalized,
-          error: finalizeError,
-        } = await supabase.rpc(
-          "finalize_ticket_purchase",
-          {
-            p_order_id: order.id,
-            p_ticket_tier_id: selectedTierData.id,
-            p_payment_reference: reference,
-          }
-        );
-
-        if (finalizeError) {
-          throw finalizeError;
-        }
-
-        if (!finalized?.success) {
-          throw new Error(
-            finalized?.message ||
-              "Payment succeeded but ticket finalization failed."
-          );
-        }
-
-        success(
-          "Payment successful! Your ticket has been confirmed."
+      if (
+        !paymentData?.success ||
+        !paymentData?.authorization_url ||
+        !paymentData?.reference
+      ) {
+        throw new Error(
+          paymentData?.message ||
+            "Unable to initialise payment."
         );
       }
 
-      /*
-       * Refresh event/ticket data after successful purchase.
-       */
+      const reference = paymentData.reference;
+
+      const paymentWindow = window.open(
+        paymentData.authorization_url,
+        "_blank"
+      );
+
+      if (!paymentWindow) {
+        throw new Error(
+          "Payment window was blocked. Please allow pop-ups and try again."
+        );
+      }
+
+      info(
+        "Complete your payment in the Paystack window."
+      );
+
+      let verified = false;
+      let verificationResult: any = null;
+
+      for (let attempt = 0; attempt < 60; attempt++) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 3000)
+        );
+
+        const {
+          data: verifyData,
+          error: verifyError,
+        } = await supabase.functions.invoke(
+          "verify-payment",
+          {
+            body: {
+              reference,
+              order_id: order.id,
+            },
+          }
+        );
+
+        if (verifyError) {
+          console.error(
+            "Payment verification attempt error:",
+            verifyError
+          );
+          continue;
+        }
+
+        verificationResult = verifyData;
+
+        if (
+          verifyData?.success &&
+          verifyData?.payment_status === "success"
+        ) {
+          verified = true;
+          break;
+        }
+      }
+
+      if (!verified) {
+        throw new Error(
+          verificationResult?.message ||
+            "Payment could not be verified."
+        );
+      }
+
+      const {
+        data: finalized,
+        error: finalizeError,
+      } = await supabase.rpc(
+        "finalize_ticket_purchase",
+        {
+          p_order_id: order.id,
+          p_ticket_tier_id: selectedTierData.id,
+          p_payment_reference: reference,
+        }
+      );
+
+      if (finalizeError) {
+        throw finalizeError;
+      }
+
+      if (!finalized?.success) {
+        throw new Error(
+          finalized?.message ||
+            "Payment succeeded but ticket finalization failed."
+        );
+      }
+
+      success(
+        "Payment successful! Your ticket has been confirmed."
+      );
+
       const [updatedEvent, updatedTiers] =
         await Promise.all([
           supabaseDb.getEvent(event.id),
@@ -466,17 +437,13 @@ export default function EventDetails() {
 
       setTiers(updatedTiers);
       setQuantity(1);
-    } catch (error) {
+    } catch (err) {
       console.error(
         "PURCHASE ERROR RAW:",
-        JSON.stringify(
-          error,
-          Object.getOwnPropertyNames(error),
-          2
-        )
+        err
       );
 
-      const supabaseError = error as {
+      const supabaseError = err as {
         code?: string;
         message?: string;
         details?: string;
