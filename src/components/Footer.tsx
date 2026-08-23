@@ -15,8 +15,8 @@ const footerLinks = [
   ]},
   { title: "Support", links: [
     { label: "Help Center", to: "/help" },
-    { label: "Privacy Policy", to: "/privacy" },
-    { label: "Terms of Service", to: "/terms" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
+    { label: "Terms of Service", to: "/terms-of-service" },
   ]},
 ];
 
