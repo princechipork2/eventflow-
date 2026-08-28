@@ -86,6 +86,18 @@ export interface Order {
   qrCode: string;
 }
 
+export interface EventAttendee {
+  ticketId: string;
+  attendeeId: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  ticketTierName: string;
+  quantity: number;
+  totalAmount: number;
+  ticketStatus: string;
+  purchaseDate: string;
+}
+
 export interface Review {
   id: string;
   userId: string;
@@ -535,6 +547,37 @@ export const supabaseDb = {
     }
 
     return (data ?? []).map(mapOrder);
+  },
+
+  async getEventAttendees(
+    eventId: string
+  ): Promise<EventAttendee[]> {
+    const { data, error } = await supabase.rpc(
+      "get_event_attendees",
+      {
+        p_event_id: eventId,
+      }
+    );
+
+    if (error) {
+      console.error(
+        "Error fetching event attendees:",
+        error.message
+      );
+      throw error;
+    }
+
+    return (data ?? []).map((row: any) => ({
+      ticketId: row.ticket_id,
+      attendeeId: row.attendee_id,
+      attendeeName: row.attendee_name ?? "Attendee",
+      attendeeEmail: row.attendee_email ?? "",
+      ticketTierName: row.ticket_tier_name ?? "Ticket",
+      quantity: Number(row.quantity ?? 0),
+      totalAmount: Number(row.total_amount ?? 0),
+      ticketStatus: row.ticket_status ?? "confirmed",
+      purchaseDate: row.purchase_date,
+    }));
   },
 
   async createOrder(order: {

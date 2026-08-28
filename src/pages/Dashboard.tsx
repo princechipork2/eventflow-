@@ -30,6 +30,7 @@ import {
   supabaseDb,
   type Event,
   type Order,
+  type EventAttendee,
 } from "@/services/supabaseDb";
 
 export default function Dashboard() {
@@ -39,6 +40,7 @@ export default function Dashboard() {
 
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
+  const [attendeesByEvent, setAttendeesByEvent] = useState<Record<string, EventAttendee[]>>({});
 
   const [orgStats, setOrgStats] = useState<{
     totalEvents: number;
@@ -108,6 +110,30 @@ export default function Dashboard() {
 
           if (!cancelled) {
             setMyEvents(events);
+
+            const attendeeResults = await Promise.all(
+              events.map(async (event) => {
+                try {
+                  const attendees = await supabaseDb.getEventAttendees(event.id);
+                  return [event.id, attendees] as const;
+                } catch (error) {
+                  console.error(
+                    `Dashboard: getEventAttendees failed for ${event.id}:`,
+                    error
+                  );
+                  errors.push(
+                    `Unable to load attendees for "${event.title}": ${
+                      error instanceof Error ? error.message : "Unknown error"
+                    }`
+                  );
+                  return [event.id, [] as EventAttendee[]] as const;
+                }
+              })
+            );
+
+            if (!cancelled) {
+              setAttendeesByEvent(Object.fromEntries(attendeeResults));
+            }
           }
         } catch (error) {
           console.error(
@@ -445,6 +471,101 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {myEvents.map((event, index) => (
+                    <div key={event.id} className="space-y-4">
+                      <EventCard
+                        event={event}
+                        index={index}
+                      />
+
+                      <div className="glass rounded-2xl p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h4 className="font-semibold">
+                              Attendees
+                            </h4>
+
+                            <p className="text-sm text-muted-foreground">
+                              {attendeesByEvent[event.id]?.length ?? 0} ticket record(s)
+                            </p>
+                          </div>
+
+                          <Users className="size-5 text-muted-foreground" />
+                        </div>
+
+                        {(attendeesByEvent[event.id]?.length ?? 0) === 0 ? (
+                          <p className="text-sm text-muted-foreground py-4 text-center">
+                            No attendees yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {attendeesByEvent[event.id].map((attendee) => (
+                              <div
+                                key={attendee.ticketId}
+                                className="rounded-xl border border-border/50 p-4"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="font-medium truncate">
+                                      {attendee.attendeeName}
+                                    </p>
+
+                                    <p className="text-sm text-muted-foreground truncate">
+                                      {attendee.attendeeEmail}
+                                    </p>
+                                  </div>
+
+                                  <Badge variant="outline">
+                                    {attendee.ticketStatus}
+                                  </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Ticket
+                                    </p>
+                                    <p className="font-medium">
+                                      {attendee.ticketTierName}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Quantity
+                                    </p>
+                                    <p className="font-medium">
+                                      {attendee.quantity}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Amount
+                                    </p>
+                                    <p className="font-medium">
+                                      ₦{attendee.totalAmount.toLocaleString()}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Purchased
+                                    </p>
+                                    <p className="font-medium">
+                                      {new Date(
+                                        attendee.purchaseDate
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
 
                     {myEvents.slice(0, 3).map((event, index) => (
                       <EventCard
@@ -551,14 +672,102 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
                   {myEvents.map((event, index) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      index={index}
-                    />
+                    <div key={event.id} className="space-y-4">
+                      <EventCard
+                        event={event}
+                        index={index}
+                      />
+
+                      <div className="glass rounded-2xl p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h4 className="font-semibold">
+                              Attendees
+                            </h4>
+
+                            <p className="text-sm text-muted-foreground">
+                              {attendeesByEvent[event.id]?.length ?? 0} ticket record(s)
+                            </p>
+                          </div>
+
+                          <Users className="size-5 text-muted-foreground" />
+                        </div>
+
+                        {(attendeesByEvent[event.id]?.length ?? 0) === 0 ? (
+                          <p className="text-sm text-muted-foreground py-4 text-center">
+                            No attendees yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {attendeesByEvent[event.id].map((attendee) => (
+                              <div
+                                key={attendee.ticketId}
+                                className="rounded-xl border border-border/50 p-4"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="font-medium truncate">
+                                      {attendee.attendeeName}
+                                    </p>
+
+                                    <p className="text-sm text-muted-foreground truncate">
+                                      {attendee.attendeeEmail}
+                                    </p>
+                                  </div>
+
+                                  <Badge variant="outline">
+                                    {attendee.ticketStatus}
+                                  </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Ticket
+                                    </p>
+                                    <p className="font-medium">
+                                      {attendee.ticketTierName}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Quantity
+                                    </p>
+                                    <p className="font-medium">
+                                      {attendee.quantity}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Amount
+                                    </p>
+                                    <p className="font-medium">
+                                      ₦{attendee.totalAmount.toLocaleString()}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Purchased
+                                    </p>
+                                    <p className="font-medium">
+                                      {new Date(
+                                        attendee.purchaseDate
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
+
 
                 </div>
               )}
