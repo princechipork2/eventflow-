@@ -73,6 +73,7 @@ export interface Event {
   minPrice: number;
   maxPrice: number;
   capacity: number;
+  seating_mode?: "general_admission" | "reserved";
   ticketsSold: number;
   tags: string[];
   featured: boolean;

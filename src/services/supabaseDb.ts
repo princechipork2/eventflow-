@@ -54,6 +54,7 @@ export interface Event {
   minPrice: number;
   maxPrice: number;
   capacity: number;
+  seating_mode?: "general_admission" | "reserved";
   ticketsSold: number;
   tags: string[];
   featured: boolean;
@@ -142,6 +143,7 @@ function mapEvent(row: any): Event {
     maxPrice: Number(row.max_price ?? row.ticket_price ?? 0),
 
     capacity: Number(row.total_tickets ?? 0),
+    seating_mode: row.seating_mode as "general_admission" | "reserved" | undefined,
     ticketsSold: Number(row.tickets_sold ?? 0),
 
     tags: row.tags ?? [],

@@ -25,6 +25,7 @@ import { supabaseDb } from "@/services/supabaseDb";
 import type { Event, TicketTier } from "@/types/event";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import SeatMap from "@/components/SeatMap";
 
 const categoryColors: Record<string, string> = {
   music: "bg-pink-500/20 text-pink-400 border-pink-500/30",
@@ -64,6 +65,11 @@ export default function EventDetails() {
 
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedSeatIds([]);
+  }, [selectedTier, quantity]);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const [reviewText, setReviewText] = useState("");
@@ -236,11 +242,17 @@ export default function EventDetails() {
     }
 
     if (quantity > available) {
+
       error(
         `Only ${available} ticket${
           available === 1 ? "" : "s"
         } available for this ticket type.`
       );
+      return;
+    }
+
+    if (event.seating_mode === "reserved" && selectedSeatIds.length !== quantity) {
+      error(`Please select exactly ${quantity} seat${quantity === 1 ? "" : "s"} before continuing.`);
       return;
     }
 
@@ -299,6 +311,7 @@ export default function EventDetails() {
           p_event_id: event.id,
           p_ticket_tier_id: selectedTierData.id,
           p_quantity: quantity,
+          p_seat_ids: event.seating_mode === "reserved" ? selectedSeatIds : null,
         }
       );
 
@@ -921,6 +934,19 @@ export default function EventDetails() {
                 {selectedTierData &&
                   !soldOut && (
                     <>
+                      {event.seating_mode === "reserved" && (
+                        <>
+                          <Separator />
+
+                          <SeatMap
+                            eventId={event.id}
+                            quantity={quantity}
+                            selectedSeatIds={selectedSeatIds}
+                            onSelectionChange={setSelectedSeatIds}
+                          />
+                        </>
+                      )}
+
                       <Separator />
 
                       {/* Quantity */}
@@ -979,6 +1005,19 @@ export default function EventDetails() {
                         </div>
                       </div>
 
+                      {event.seating_mode === "reserved" && (
+                        <>
+                          <Separator />
+
+                          <SeatMap
+                            eventId={event.id}
+                            quantity={quantity}
+                            selectedSeatIds={selectedSeatIds}
+                            onSelectionChange={setSelectedSeatIds}
+                          />
+                        </>
+                      )}
+
                       <Separator />
 
                       {/* Total */}
@@ -999,7 +1038,7 @@ export default function EventDetails() {
                         className="w-full"
                         size="lg"
                         onClick={handlePurchase}
-                        disabled={isPurchasing}
+                        disabled={isPurchasing || (event.seating_mode === "reserved" && selectedSeatIds.length !== quantity)}
                       >
                         {isPurchasing ? (
                           <>
