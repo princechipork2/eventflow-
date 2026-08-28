@@ -201,6 +201,12 @@ export default function EventDetails() {
     );
   }
 
+  console.log("EVENT SEATING DEBUG:", {
+    eventId: event.id,
+    eventTitle: event.title,
+    seating_mode: event.seating_mode,
+  });
+
   const percentSold =
     event.capacity > 0
       ? Math.round(
@@ -930,6 +936,10 @@ export default function EventDetails() {
                     })}
                   </div>
                 )}
+
+                <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                  Seating mode debug: <strong>{event.seating_mode ?? "undefined"}</strong>
+                </div>
 
                 {selectedTierData &&
                   !soldOut && (
