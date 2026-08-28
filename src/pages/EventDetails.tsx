@@ -298,14 +298,35 @@ export default function EventDetails() {
         return;
       }
 
-      const order = await supabaseDb.createOrder({
-        userId: user.id,
-        eventId: event.id,
-        ticketTierId: selectedTierData.id,
-        quantity,
-        totalAmount: totalPrice,
-        status: "pending",
-      });
+      /*
+       * Create the paid order through the database RPC.
+       * The database determines the price, total, and expiry.
+       */
+      const {
+        data: orderData,
+        error: orderError,
+      } = await supabase.rpc(
+        "create_paid_ticket_order",
+        {
+          p_event_id: event.id,
+          p_ticket_tier_id: selectedTierData.id,
+          p_quantity: quantity,
+        }
+      );
+
+      if (orderError) {
+        throw orderError;
+      }
+
+      if (!orderData?.success || !orderData?.order_id) {
+        throw new Error(
+          orderData?.message ||
+            "Unable to create ticket order."
+        );
+      }
+
+      const orderId = orderData.order_id;
+
 
       const {
         data: paymentData,
@@ -314,7 +335,7 @@ export default function EventDetails() {
         "initialize-payment",
         {
           body: {
-            order_id: order.id,
+            order_id: orderId,
           },
         }
       );
@@ -367,7 +388,7 @@ export default function EventDetails() {
           {
             body: {
               reference,
-              order_id: order.id,
+              order_id: orderId,
             },
           }
         );
@@ -404,7 +425,7 @@ export default function EventDetails() {
       } = await supabase.rpc(
         "finalize_ticket_purchase",
         {
-          p_order_id: order.id,
+          p_order_id: orderId,
           p_ticket_tier_id: selectedTierData.id,
           p_payment_reference: reference,
         }
