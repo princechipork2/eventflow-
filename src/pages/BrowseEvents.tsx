@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/EventCard";
-import { supabaseDb, type Category, type Event } from "@/services/supabaseDb";
+import {
+  supabaseDb,
+  type Category,
+  type Event,
+} from "@/services/supabaseDb";
 
-const categories: { value: Category | "all"; label: string }[] = [
+const categories: {
+  value: Category | "all";
+  label: string;
+}[] = [
   { value: "all", label: "All Events" },
   { value: "music", label: "Music" },
   { value: "tech", label: "Tech" },
@@ -20,7 +29,8 @@ const categories: { value: Category | "all"; label: string }[] = [
 
 export default function BrowseEvents() {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<Category | "all">("all");
+  const [category, setCategory] =
+    useState<Category | "all">("all");
   const [showFilters, setShowFilters] = useState(false);
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -43,16 +53,17 @@ export default function BrowseEvents() {
         if (!cancelled) {
           setEvents(data);
         }
-     } catch (err: any) {
-  console.error("Failed to load events:", err);
+      } catch (err: any) {
+        console.error("Failed to load events:", err);
 
-  if (!cancelled) {
-    setEvents([]);
-    setError(
-      err?.message || "Unable to load events. Please try again."
-    );
-  }
-} finally {
+        if (!cancelled) {
+          setEvents([]);
+          setError(
+            err?.message ||
+              "Unable to load events. Please try again."
+          );
+        }
+      } finally {
         if (!cancelled) {
           setIsLoading(false);
         }
@@ -71,11 +82,23 @@ export default function BrowseEvents() {
     setCategory("all");
   };
 
-  const hasFilters = search !== "" || category !== "all";
+  const hasFilters =
+    search !== "" || category !== "all";
 
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        {/* Back to Dashboard */}
+        <div className="mb-6">
+          <Link
+            to="/dashboard"
+            className="relative z-20 inline-flex items-center gap-2 rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm font-medium text-white backdrop-blur-md transition-all hover:border-white/30 hover:bg-black/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <ArrowLeft className="size-4 shrink-0" />
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
 
         {/* Header */}
         <motion.div
@@ -106,7 +129,7 @@ export default function BrowseEvents() {
               <Input
                 placeholder="Search events by title or description..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 bg-background border-input"
               />
             </div>
@@ -115,7 +138,12 @@ export default function BrowseEvents() {
               variant="outline"
               size="icon"
               onClick={() => setShowFilters(!showFilters)}
-              className={showFilters ? "bg-primary/20 border-primary/30" : ""}
+              className={
+                showFilters
+                  ? "bg-primary/20 border-primary/30"
+                  : ""
+              }
+              aria-label="Toggle filters"
             >
               <SlidersHorizontal className="size-4" />
             </Button>
@@ -135,13 +163,20 @@ export default function BrowseEvents() {
 
           {showFilters && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              initial={{
+                opacity: 0,
+                height: 0,
+              }}
+              animate={{
+                opacity: 1,
+                height: "auto",
+              }}
               className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border"
             >
-              {categories.map(cat => (
+              {categories.map((cat) => (
                 <button
                   key={cat.value}
+                  type="button"
                   onClick={() => setCategory(cat.value)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     category === cat.value
@@ -186,50 +221,56 @@ export default function BrowseEvents() {
         )}
 
         {/* Empty state */}
-        {!isLoading && !error && events.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-4xl mb-4 opacity-30">🎪</div>
+        {!isLoading &&
+          !error &&
+          events.length === 0 && (
+            <div className="text-center py-20">
+              <div className="text-4xl mb-4 opacity-30">
+                🎪
+              </div>
 
-            <h3 className="text-lg font-semibold mb-2">
-              No events found
-            </h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No events found
+              </h3>
 
-            <p className="text-muted-foreground text-sm mb-6">
-              Try adjusting your search or filters
-            </p>
+              <p className="text-muted-foreground text-sm mb-6">
+                Try adjusting your search or filters
+              </p>
 
-            <Button
-              variant="outline"
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        )}
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
 
         {/* Results */}
-        {!isLoading && !error && events.length > 0 && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                <span className="text-foreground font-medium">
-                  {events.length}
-                </span>{" "}
-                events found
-              </p>
-            </div>
+        {!isLoading &&
+          !error &&
+          events.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  <span className="text-foreground font-medium">
+                    {events.length}
+                  </span>{" "}
+                  events found
+                </p>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((event, i) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  index={i}
-                />
-              ))}
-            </div>
-          </>
-        )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {events.map((event, i) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    index={i}
+                  />
+                ))}
+              </div>
+            </>
+          )}
       </div>
     </div>
   );

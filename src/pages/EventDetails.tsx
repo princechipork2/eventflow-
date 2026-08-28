@@ -109,13 +109,13 @@ export default function EventDetails() {
         if (ticketTiers.length > 0) {
           setSelectedTier(ticketTiers[0].id);
         }
-      } catch (error) {
+      } catch (err) {
         const message =
-          error instanceof Error
-            ? error.message
-            : JSON.stringify(error);
+          err instanceof Error
+            ? err.message
+            : JSON.stringify(err);
 
-        console.error("EVENT LOAD ERROR:", error);
+        console.error("EVENT LOAD ERROR:", err);
 
         if (!mounted) return;
 
@@ -214,17 +214,6 @@ export default function EventDetails() {
     ? selectedTierData.price * quantity
     : 0;
 
-  /*
-   * Complete Paystack payment flow:
-   *
-   * 1. Create a PENDING order.
-   * 2. Initialise payment through the Supabase Edge Function.
-   * 3. Open Paystack checkout.
-   * 4. Verify the payment server-side.
-   * 5. Finalize the order through the database RPC.
-   *
-   * Tickets are NOT created before successful payment.
-   */
   const handlePurchase = async () => {
     if (isPurchasing) return;
 
@@ -262,11 +251,14 @@ export default function EventDetails() {
         const {
           data: freeTicket,
           error: freeTicketError,
-        } = await supabase.rpc("create_free_ticket_order", {
-          p_event_id: event.id,
-          p_ticket_tier_id: selectedTierData.id,
-          p_quantity: quantity,
-        });
+        } = await supabase.rpc(
+          "create_free_ticket_order",
+          {
+            p_event_id: event.id,
+            p_ticket_tier_id: selectedTierData.id,
+            p_quantity: quantity,
+          }
+        );
 
         if (freeTicketError) {
           throw freeTicketError;
@@ -298,10 +290,6 @@ export default function EventDetails() {
         return;
       }
 
-      /*
-       * Create the paid order through the database RPC.
-       * The database determines the price, total, and expiry.
-       */
       const {
         data: orderData,
         error: orderError,
@@ -318,7 +306,10 @@ export default function EventDetails() {
         throw orderError;
       }
 
-      if (!orderData?.success || !orderData?.order_id) {
+      if (
+        !orderData?.success ||
+        !orderData?.order_id
+      ) {
         throw new Error(
           orderData?.message ||
             "Unable to create ticket order."
@@ -326,7 +317,6 @@ export default function EventDetails() {
       }
 
       const orderId = orderData.order_id;
-
 
       const {
         data: paymentData,
@@ -375,7 +365,11 @@ export default function EventDetails() {
       let verified = false;
       let verificationResult: any = null;
 
-      for (let attempt = 0; attempt < 60; attempt++) {
+      for (
+        let attempt = 0;
+        attempt < 60;
+        attempt++
+      ) {
         await new Promise((resolve) =>
           setTimeout(resolve, 3000)
         );
@@ -525,15 +519,15 @@ export default function EventDetails() {
         await supabaseDb.getReviews(event.id);
 
       setReviews(updatedReviews);
-    } catch (error) {
+    } catch (err) {
       console.error(
         "Error creating review:",
-        error
+        err
       );
 
       error(
-        error instanceof Error
-          ? error.message
+        err instanceof Error
+          ? err.message
           : "Unable to submit review."
       );
     }
@@ -557,6 +551,7 @@ export default function EventDetails() {
 
   return (
     <div className="min-h-screen pt-20 pb-16">
+      {/* Event Cover */}
       <div className="relative h-[40vh] sm:h-[50vh] overflow-hidden">
         {event.coverImage ? (
           <img
@@ -567,24 +562,28 @@ export default function EventDetails() {
         ) : (
           <div className="w-full h-full bg-muted" />
         )}
-
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
-          <div className="mx-auto max-w-7xl">
-            <Link
-              to="/events"
-              className="inline-flex items-center gap-1 text-sm text-white/70 hover:text-white mb-4 transition-colors"
-            >
-              <ArrowLeft className="size-3.5" />
-              Back to Events
-            </Link>
-          </div>
-        </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        {/* Back Navigation */}
+        <div className="relative z-30 py-5 sm:py-6">
+          <Link
+            to="/events"
+            aria-label="Back to Events"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-xl border border-border/70 bg-background/90 px-4 py-2.5 text-sm font-medium text-foreground shadow-sm backdrop-blur-md transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <ArrowLeft className="size-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5" />
+            <span>Back to Events</span>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+
+          {/* Event Information */}
           <div className="lg:col-span-2 space-y-8">
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -620,14 +619,18 @@ export default function EventDetails() {
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="size-4" />
+
                   {new Date(
                     event.startDate
-                  ).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  ).toLocaleDateString(
+                    "en-US",
+                    {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    }
+                  )}
                 </span>
 
                 <span className="flex items-center gap-1.5">
@@ -635,17 +638,25 @@ export default function EventDetails() {
 
                   {new Date(
                     event.startDate
-                  ).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}{" "}
-                  –{" "}
+                  ).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }
+                  )}
+
+                  {" – "}
+
                   {new Date(
                     event.endDate
-                  ).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+                  ).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }
+                  )}
                 </span>
 
                 <span className="flex items-center gap-1.5">
@@ -658,6 +669,7 @@ export default function EventDetails() {
               </div>
             </motion.div>
 
+            {/* Description */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -672,6 +684,7 @@ export default function EventDetails() {
               </p>
             </motion.div>
 
+            {/* Tags */}
             {event.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {event.tags.map((tag) => (
@@ -686,6 +699,7 @@ export default function EventDetails() {
               </div>
             )}
 
+            {/* Reviews */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -706,7 +720,7 @@ export default function EventDetails() {
                   {reviews.map((review) => (
                     <div
                       key={review.id}
-                      className="flex gap-3 p-4 rounded-xl bg-white/5"
+                      className="flex gap-3 rounded-xl bg-white/5 p-4"
                     >
                       <Avatar className="size-9">
                         {review.userAvatar && (
@@ -719,7 +733,9 @@ export default function EventDetails() {
                         <AvatarFallback className="text-xs bg-primary/20 text-primary">
                           {review.userName
                             .split(" ")
-                            .map((name) => name[0])
+                            .map(
+                              (name) => name[0]
+                            )
                             .join("")
                             .slice(0, 2)
                             .toUpperCase()}
@@ -764,8 +780,9 @@ export default function EventDetails() {
                 </div>
               )}
 
+              {/* Write Review */}
               {user && (
-                <div className="mt-6 p-4 rounded-xl bg-white/5 space-y-3">
+                <div className="mt-6 rounded-xl bg-white/5 p-4 space-y-3">
                   <h3 className="text-sm font-medium">
                     Write a Review
                   </h3>
@@ -782,6 +799,7 @@ export default function EventDetails() {
                             index + 1
                           )
                         }
+                        className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                       >
                         <Star
                           className={`size-5 transition-colors ${
@@ -814,9 +832,11 @@ export default function EventDetails() {
             </motion.div>
           </div>
 
+          {/* Ticket Card */}
           <div className="lg:col-span-1">
             <Card className="sticky top-24 border-white/10">
               <CardContent className="p-6 space-y-5">
+
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">
                     Get Tickets
@@ -887,8 +907,7 @@ export default function EventDetails() {
                             </div>
 
                             <span className="font-semibold whitespace-nowrap">
-                              {tier.price ===
-                              0
+                              {tier.price === 0
                                 ? "Free"
                                 : `₦${tier.price.toLocaleString()}`}
                             </span>
@@ -904,6 +923,7 @@ export default function EventDetails() {
                     <>
                       <Separator />
 
+                      {/* Quantity */}
                       <div>
                         <label className="text-sm font-medium">
                           Quantity
@@ -961,6 +981,7 @@ export default function EventDetails() {
 
                       <Separator />
 
+                      {/* Total */}
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
                           Total
@@ -973,6 +994,7 @@ export default function EventDetails() {
                         </span>
                       </div>
 
+                      {/* Purchase */}
                       <Button
                         className="w-full"
                         size="lg"
@@ -1006,6 +1028,7 @@ export default function EventDetails() {
                   </Button>
                 )}
 
+                {/* Capacity */}
                 <div className="text-xs text-muted-foreground text-center">
                   {event.ticketsSold} of{" "}
                   {event.capacity} tickets sold
@@ -1022,6 +1045,7 @@ export default function EventDetails() {
                     />
                   </div>
                 </div>
+
               </CardContent>
             </Card>
           </div>
