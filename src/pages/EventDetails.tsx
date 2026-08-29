@@ -13,16 +13,23 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNotifications } from "@/context/NotificationContext";
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
+import {
+  Avatar,
+  AvatarFallback,
+} from "@/components/ui/avatar";
 import { supabaseDb } from "@/services/supabaseDb";
-import type { Event, TicketTier } from "@/types/event";
+import type {
+  Event,
+  TicketTier,
+} from "@/types/event";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SeatMap from "@/components/SeatMap";
@@ -59,21 +66,19 @@ export default function EventDetails() {
   const [event, setEvent] = useState<Event | null>(null);
   const [tiers, setTiers] = useState<TicketTier[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    setSelectedSeatIds([]);
-  }, [selectedTier, quantity]);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+
+  useEffect(() => {
+    setSelectedSeatIds([]);
+  }, [selectedTier, quantity]);
 
   useEffect(() => {
     let mounted = true;
@@ -102,10 +107,11 @@ export default function EventDetails() {
 
         setEvent(eventData);
 
-        const [ticketTiers, eventReviews] = await Promise.all([
-          supabaseDb.getTicketTiers(eventData.id),
-          supabaseDb.getReviews(eventData.id),
-        ]);
+        const [ticketTiers, eventReviews] =
+          await Promise.all([
+            supabaseDb.getTicketTiers(eventData.id),
+            supabaseDb.getReviews(eventData.id),
+          ]);
 
         if (!mounted) return;
 
@@ -125,7 +131,9 @@ export default function EventDetails() {
 
         if (!mounted) return;
 
-        setLoadError(message || "Unable to load this event.");
+        setLoadError(
+          message || "Unable to load this event."
+        );
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -201,12 +209,6 @@ export default function EventDetails() {
     );
   }
 
-  console.log("EVENT SEATING DEBUG:", {
-    eventId: event.id,
-    eventTitle: event.title,
-    seating_mode: event.seating_mode,
-  });
-
   const percentSold =
     event.capacity > 0
       ? Math.round(
@@ -240,7 +242,8 @@ export default function EventDetails() {
     }
 
     const available =
-      selectedTierData.quantity - selectedTierData.sold;
+      selectedTierData.quantity -
+      selectedTierData.sold;
 
     if (quantity < 1) {
       error("Quantity must be at least 1.");
@@ -248,7 +251,6 @@ export default function EventDetails() {
     }
 
     if (quantity > available) {
-
       error(
         `Only ${available} ticket${
           available === 1 ? "" : "s"
@@ -257,8 +259,15 @@ export default function EventDetails() {
       return;
     }
 
-    if (event.seating_mode === "reserved" && selectedSeatIds.length !== quantity) {
-      error(`Please select exactly ${quantity} seat${quantity === 1 ? "" : "s"} before continuing.`);
+    if (
+      event.seating_mode === "reserved" &&
+      selectedSeatIds.length !== quantity
+    ) {
+      error(
+        `Please select exactly ${quantity} seat${
+          quantity === 1 ? "" : "s"
+        } before continuing.`
+      );
       return;
     }
 
@@ -273,7 +282,8 @@ export default function EventDetails() {
           "create_free_ticket_order",
           {
             p_event_id: event.id,
-            p_ticket_tier_id: selectedTierData.id,
+            p_ticket_tier_id:
+              selectedTierData.id,
             p_quantity: quantity,
           }
         );
@@ -293,11 +303,13 @@ export default function EventDetails() {
           "Free ticket claimed successfully! Check your dashboard."
         );
 
-        const [updatedEvent, updatedTiers] =
-          await Promise.all([
-            supabaseDb.getEvent(event.id),
-            supabaseDb.getTicketTiers(event.id),
-          ]);
+        const [
+          updatedEvent,
+          updatedTiers,
+        ] = await Promise.all([
+          supabaseDb.getEvent(event.id),
+          supabaseDb.getTicketTiers(event.id),
+        ]);
 
         if (updatedEvent) {
           setEvent(updatedEvent);
@@ -315,9 +327,13 @@ export default function EventDetails() {
         "create_paid_ticket_order",
         {
           p_event_id: event.id,
-          p_ticket_tier_id: selectedTierData.id,
+          p_ticket_tier_id:
+            selectedTierData.id,
           p_quantity: quantity,
-          p_seat_ids: event.seating_mode === "reserved" ? selectedSeatIds : null,
+          p_seat_ids:
+            event.seating_mode === "reserved"
+              ? selectedSeatIds
+              : null,
         }
       );
 
@@ -418,7 +434,8 @@ export default function EventDetails() {
 
         if (
           verifyData?.success &&
-          verifyData?.payment_status === "success"
+          verifyData?.payment_status ===
+            "success"
         ) {
           verified = true;
           break;
@@ -439,7 +456,8 @@ export default function EventDetails() {
         "finalize_ticket_purchase",
         {
           p_order_id: orderId,
-          p_ticket_tier_id: selectedTierData.id,
+          p_ticket_tier_id:
+            selectedTierData.id,
           p_payment_reference: reference,
         }
       );
@@ -459,11 +477,13 @@ export default function EventDetails() {
         "Payment successful! Your ticket has been confirmed."
       );
 
-      const [updatedEvent, updatedTiers] =
-        await Promise.all([
-          supabaseDb.getEvent(event.id),
-          supabaseDb.getTicketTiers(event.id),
-        ]);
+      const [
+        updatedEvent,
+        updatedTiers,
+      ] = await Promise.all([
+        supabaseDb.getEvent(event.id),
+        supabaseDb.getTicketTiers(event.id),
+      ]);
 
       if (updatedEvent) {
         setEvent(updatedEvent);
@@ -512,7 +532,9 @@ export default function EventDetails() {
 
   const handleReview = async () => {
     if (!user) {
-      error("Please sign in to leave a review.");
+      error(
+        "Please sign in to leave a review."
+      );
       return;
     }
 
@@ -585,7 +607,6 @@ export default function EventDetails() {
 
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
         {/* Back Navigation */}
         <div className="relative z-30 py-5 sm:py-6">
           <Link
@@ -599,19 +620,25 @@ export default function EventDetails() {
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-
           {/* Event Information */}
           <div className="lg:col-span-2 space-y-8">
-
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
             >
               <div className="flex flex-wrap gap-2 mb-3">
                 <Badge
                   variant="outline"
                   className={`text-xs capitalize ${
-                    categoryColors[event.category] ||
+                    categoryColors[
+                      event.category
+                    ] ||
                     categoryColors.other
                   }`}
                 >
@@ -690,9 +717,17 @@ export default function EventDetails() {
 
             {/* Description */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                delay: 0.1,
+              }}
             >
               <h2 className="text-lg font-semibold mb-3">
                 About This Event
@@ -720,9 +755,17 @@ export default function EventDetails() {
 
             {/* Reviews */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                delay: 0.2,
+              }}
             >
               <Separator className="my-8" />
 
@@ -753,7 +796,8 @@ export default function EventDetails() {
                           {review.userName
                             .split(" ")
                             .map(
-                              (name) => name[0]
+                              (name) =>
+                                name[0]
                             )
                             .join("")
                             .slice(0, 2)
@@ -855,7 +899,6 @@ export default function EventDetails() {
           <div className="lg:col-span-1">
             <Card className="sticky top-24 border-white/10">
               <CardContent className="p-6 space-y-5">
-
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">
                     Get Tickets
@@ -879,7 +922,8 @@ export default function EventDetails() {
                   <div className="space-y-3">
                     {tiers.map((tier) => {
                       const available =
-                        tier.quantity - tier.sold;
+                        tier.quantity -
+                        tier.sold;
 
                       const unavailable =
                         available <= 0;
@@ -914,7 +958,9 @@ export default function EventDetails() {
 
                               {tier.description && (
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  {tier.description}
+                                  {
+                                    tier.description
+                                  }
                                 </p>
                               )}
 
@@ -926,7 +972,8 @@ export default function EventDetails() {
                             </div>
 
                             <span className="font-semibold whitespace-nowrap">
-                              {tier.price === 0
+                              {tier.price ===
+                              0
                                 ? "Free"
                                 : `₦${tier.price.toLocaleString()}`}
                             </span>
@@ -937,29 +984,12 @@ export default function EventDetails() {
                   </div>
                 )}
 
-                <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-                  Seating mode debug: <strong>{event.seating_mode ?? "undefined"}</strong>
-                </div>
-
                 {selectedTierData &&
                   !soldOut && (
                     <>
-                      {event.seating_mode === "reserved" && (
-                        <>
-                          <Separator />
-
-                          <SeatMap
-                            eventId={event.id}
-                            quantity={quantity}
-                            selectedSeatIds={selectedSeatIds}
-                            onSelectionChange={setSelectedSeatIds}
-                          />
-                        </>
-                      )}
-
+                      {/* Quantity */}
                       <Separator />
 
-                      {/* Quantity */}
                       <div>
                         <label className="text-sm font-medium">
                           Quantity
@@ -979,7 +1009,8 @@ export default function EventDetails() {
                               )
                             }
                             disabled={
-                              quantity <= 1 ||
+                              quantity <=
+                                1 ||
                               isPurchasing
                             }
                           >
@@ -1014,7 +1045,26 @@ export default function EventDetails() {
                           </Button>
                         </div>
                       </div>
-                      
+
+                      {/* Seat Selection */}
+                      {event.seating_mode ===
+                        "reserved" && (
+                        <>
+                          <Separator />
+
+                          <SeatMap
+                            eventId={event.id}
+                            quantity={quantity}
+                            selectedSeatIds={
+                              selectedSeatIds
+                            }
+                            onSelectionChange={
+                              setSelectedSeatIds
+                            }
+                          />
+                        </>
+                      )}
+
                       <Separator />
 
                       {/* Total */}
@@ -1034,8 +1084,16 @@ export default function EventDetails() {
                       <Button
                         className="w-full"
                         size="lg"
-                        onClick={handlePurchase}
-                        disabled={isPurchasing || (event.seating_mode === "reserved" && selectedSeatIds.length !== quantity)}
+                        onClick={
+                          handlePurchase
+                        }
+                        disabled={
+                          isPurchasing ||
+                          (event.seating_mode ===
+                            "reserved" &&
+                            selectedSeatIds.length !==
+                              quantity)
+                        }
                       >
                         {isPurchasing ? (
                           <>
@@ -1081,7 +1139,6 @@ export default function EventDetails() {
                     />
                   </div>
                 </div>
-
               </CardContent>
             </Card>
           </div>

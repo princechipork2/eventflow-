@@ -103,6 +103,11 @@ serve(async (req) => {
       );
     }
 
+    /*
+     * Service-role client.
+     *
+     * Used for trusted server-side reads and updates.
+     */
     const supabase = createClient(
       SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY
@@ -136,6 +141,24 @@ serve(async (req) => {
     console.log(
       "Authenticated user:",
       user.id
+    );
+
+    /*
+     * User-authenticated client.
+     *
+     * This client preserves auth.uid() when calling
+     * finalize_ticket_purchase().
+     */
+    const userSupabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
     );
 
     const body = await req.json();
@@ -276,8 +299,50 @@ serve(async (req) => {
     }
 
     /*
-     * If this order was already server-verified, return the
-     * verified Paystack status without creating another payment.
+     * Get the order item and ticket tier.
+     *
+     * finalize_ticket_purchase() requires the ticket tier ID.
+     */
+    const {
+      data: orderItem,
+      error: orderItemError,
+    } = await supabase
+      .from("order_items")
+      .select(
+        "ticket_tier_id, quantity"
+      )
+      .eq("order_id", order.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (orderItemError || !orderItem) {
+      console.error(
+        "VERIFY PAYMENT ORDER ITEM LOOKUP ERROR:",
+        stringifyError(orderItemError)
+      );
+
+      return jsonResponse(
+        {
+          success: false,
+          message:
+            "The ticket information for this order could not be found.",
+        },
+        400
+      );
+    }
+
+    console.log(
+      "ORDER ITEM FOUND:",
+      JSON.stringify(
+        orderItem,
+        null,
+        2
+      )
+    );
+
+    /*
+     * If this order was already server-verified,
+     * finalize it if necessary and return the result.
      */
     if (
       order.payment_status === "successful" &&
@@ -285,16 +350,47 @@ serve(async (req) => {
       order.payment_reference === reference
     ) {
       console.log(
-        "PAYMENT ALREADY VERIFIED:"
+        "PAYMENT ALREADY VERIFIED."
       );
 
-      console.log(
-        JSON.stringify(
+      const {
+        data: finalizeResult,
+        error: finalizeError,
+      } = await userSupabase.rpc(
+        "finalize_ticket_purchase",
+        {
+          p_order_id: order.id,
+          p_ticket_tier_id:
+            orderItem.ticket_tier_id,
+          p_payment_reference: reference,
+        }
+      );
+
+      if (finalizeError) {
+        console.error(
+          "ALREADY VERIFIED — TICKET FINALIZATION ERROR:",
+          stringifyError(finalizeError)
+        );
+
+        return jsonResponse(
           {
-            order_id: order.id,
+            success: false,
+            payment_status: "successful",
             reference:
               order.payment_reference,
+            order_id: order.id,
+            message:
+              finalizeError.message ||
+              "Payment is verified, but ticket finalization failed.",
           },
+          500
+        );
+      }
+
+      console.log(
+        "ALREADY VERIFIED — TICKET FINALIZATION SUCCESS:",
+        JSON.stringify(
+          finalizeResult,
           null,
           2
         )
@@ -302,13 +398,14 @@ serve(async (req) => {
 
       return jsonResponse(
         {
+          ...finalizeResult,
           success: true,
           payment_status: "success",
           reference:
             order.payment_reference,
           order_id: order.id,
           message:
-            "Payment already verified successfully.",
+            "Payment already verified and ticket finalized successfully.",
         },
         200
       );
@@ -520,10 +617,6 @@ serve(async (req) => {
 
     /*
      * Compare the Paystack requested amount with the order amount.
-     *
-     * The order total is the server-side source of truth. Paystack
-     * reports `requested_amount` in the currency's lowest denomination
-     * (kobo for NGN), so both values are compared in kobo.
      */
     const expectedAmountKobo =
       Math.round(
@@ -587,9 +680,8 @@ serve(async (req) => {
     );
 
     /*
-     * IMPORTANT:
-     * Only a successful Paystack transaction is allowed to
-     * create the server-side verification record.
+     * Only a successful Paystack transaction is allowed
+     * to create the server-side verification record.
      */
     if (successful) {
       const {
@@ -625,7 +717,123 @@ serve(async (req) => {
       console.log(
         "PAYMENT VERIFICATION DATABASE UPDATE SUCCESS."
       );
+
+      /*
+       * FINALIZE THE TICKET PURCHASE.
+       *
+       * This RPC is called through the user's authenticated
+       * Supabase client so auth.uid() inside the SECURITY
+       * DEFINER function resolves to the actual purchaser.
+       */
+      console.log(
+        "FINALIZING TICKET PURCHASE:"
+      );
+
+      console.log(
+        JSON.stringify(
+          {
+            order_id: order.id,
+            ticket_tier_id:
+              orderItem.ticket_tier_id,
+            payment_reference:
+              payment.reference,
+            user_id: user.id,
+          },
+          null,
+          2
+        )
+      );
+
+      const {
+        data: finalizeResult,
+        error: finalizeError,
+      } = await userSupabase.rpc(
+        "finalize_ticket_purchase",
+        {
+          p_order_id: order.id,
+          p_ticket_tier_id:
+            orderItem.ticket_tier_id,
+          p_payment_reference:
+            payment.reference,
+        }
+      );
+
+      if (finalizeError) {
+        console.error(
+          "TICKET FINALIZATION ERROR:",
+          stringifyError(finalizeError)
+        );
+
+        /*
+         * Payment is already verified at this point.
+         * Do NOT pretend the payment failed.
+         */
+        return jsonResponse(
+          {
+            success: false,
+            payment_verified: true,
+            payment_status: "successful",
+            reference:
+              payment.reference,
+            order_id: order.id,
+            message:
+              finalizeError.message ||
+              "Payment was verified, but ticket finalization failed.",
+          },
+          500
+        );
+      }
+
+      console.log(
+        "TICKET FINALIZATION SUCCESS:",
+        JSON.stringify(
+          finalizeResult,
+          null,
+          2
+        )
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "VERIFY PAYMENT — PURCHASE COMPLETE"
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      return jsonResponse(
+        {
+          ...finalizeResult,
+          success: true,
+          payment_verified: true,
+          payment_status: "success",
+          reference:
+            payment.reference,
+          amount:
+            payment.amount,
+          currency:
+            payment.currency,
+          paid_at:
+            payment.paid_at,
+          email:
+            payment.customer?.email ??
+            null,
+          order_id:
+            order.id,
+          message:
+            "Payment verified and ticket finalized successfully.",
+        },
+        200
+      );
     }
+
+    console.log(
+      "PAYMENT NOT SUCCESSFUL — NO TICKET FINALIZATION."
+    );
 
     console.log(
       "========================================"
@@ -641,7 +849,7 @@ serve(async (req) => {
 
     return jsonResponse(
       {
-        success: successful,
+        success: false,
         payment_status:
           payment.status,
         reference:
@@ -657,9 +865,8 @@ serve(async (req) => {
           null,
         order_id:
           order.id,
-        message: successful
-          ? "Payment verified successfully."
-          : "Payment has not been completed.",
+        message:
+          "Payment has not been completed.",
       },
       200
     );
@@ -669,7 +876,7 @@ serve(async (req) => {
     );
 
     console.error(
-      "VERIFY PAYMENT FATAL ERROR"
+      "VERIFY PAYMENT — UNHANDLED ERROR"
     );
 
     console.error(
@@ -686,7 +893,7 @@ serve(async (req) => {
         message:
           error instanceof Error
             ? error.message
-            : "Unable to verify payment.",
+            : "An unexpected error occurred while verifying payment.",
       },
       500
     );
