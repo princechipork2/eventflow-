@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+iiimport { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   MapPin,
@@ -1014,20 +1014,7 @@ export default function EventDetails() {
                           </Button>
                         </div>
                       </div>
-
-                      {event.seating_mode === "reserved" && (
-                        <>
-                          <Separator />
-
-                          <SeatMap
-                            eventId={event.id}
-                            quantity={quantity}
-                            selectedSeatIds={selectedSeatIds}
-                            onSelectionChange={setSelectedSeatIds}
-                          />
-                        </>
-                      )}
-
+                      
                       <Separator />
 
                       {/* Total */}
