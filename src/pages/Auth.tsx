@@ -498,16 +498,25 @@ export default function Auth() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full gap-3"
+                    className="w-full gap-3 border-[#dadce0] bg-white text-[#3c4043] shadow-sm hover:bg-[#f8f9fa] hover:text-[#202124] hover:border-[#c4c7c5] dark:border-[#dadce0] dark:bg-white dark:text-[#3c4043] dark:hover:bg-[#f8f9fa]"
                     onClick={handleGoogleSignIn}
                     disabled={googleSubmitting}
                   >
                     {googleSubmitting ? (
-                      <LoaderCircle className="size-4 animate-spin" />
+                      <LoaderCircle className="size-4 animate-spin text-[#4285F4]" />
                     ) : (
-                      <span className="font-bold text-base">G</span>
+                      <svg
+                        className="size-5 shrink-0"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path fill="#4285F4" d="M21.35 12.23c0-.79-.07-1.55-.23-2.27H12v4.3h5.22a4.46 4.46 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.93-4.18 2.93-7.39Z"/>
+                        <path fill="#34A853" d="M12 21.99c2.63 0 4.84-.87 6.45-2.37l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.5A9.74 9.74 0 0 0 12 21.99Z"/>
+                        <path fill="#FBBC05" d="M6.54 14.09a5.86 5.86 0 0 1 0-3.75v-2.5H3.3a9.99 9.99 0 0 0 0 8.75l3.24-2.5Z"/>
+                        <path fill="#EA4335" d="M12 6.31c1.43 0 2.72.49 3.73 1.45l2.8-2.8C16.83 3.38 14.63 2.01 12 2.01a9.74 9.74 0 0 0-8.7 5.83l3.24 2.5C7.31 8.03 9.46 6.31 12 6.31Z"/>
+                      </svg>
                     )}
-                    Continue with Google
+                    <span className="font-medium">Continue with Google</span>
                   </Button>
 
                   <div className="flex items-center gap-3">
@@ -615,16 +624,37 @@ export default function Auth() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full gap-3"
+                    className="w-full gap-3 border-[#dadce0] bg-white text-[#3c4043] shadow-sm hover:bg-[#f8f9fa] hover:text-[#202124] hover:border-[#c4c7c5] dark:border-[#dadce0] dark:bg-white dark:text-[#3c4043] dark:hover:bg-[#f8f9fa]"
                     onClick={handleGoogleSignup}
                     disabled={googleSubmitting}
                   >
                     {googleSubmitting ? (
-                      <LoaderCircle className="size-4 animate-spin" />
+                      <LoaderCircle className="size-4 animate-spin text-[#4285F4]" />
                     ) : (
-                      <span className="font-bold text-base">G</span>
+                      <svg
+                        className="size-5 shrink-0"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill="#4285F4"
+                          d="M21.35 12.23c0-.79-.07-1.55-.23-2.27H12v4.3h5.22a4.46 4.46 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.93-4.18 2.93-7.39Z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 21.99c2.63 0 4.84-.87 6.45-2.37l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.5A9.74 9.74 0 0 0 12 21.99Z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M6.54 14.09a5.86 5.86 0 0 1 0-3.75v-2.5H3.3a9.99 9.99 0 0 0 0 8.75l3.24-2.5Z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 6.31c1.43 0 2.72.49 3.73 1.45l2.8-2.8C16.83 3.38 14.63 2.01 12 2.01a9.74 9.74 0 0 0-8.7 5.83l3.24 2.5C7.31 8.03 9.46 6.31 12 6.31Z"
+                        />
+                      </svg>
                     )}
-                    Continue with Google
+                    <span className="font-medium">Continue with Google</span>
                   </Button>
 
                   <div className="flex items-center gap-3">
